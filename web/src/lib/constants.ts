@@ -10,6 +10,7 @@ export const SHORTCUTS = {
   CLOSE_PANE: { key: 'w', meta: true, shift: false },
   TOGGLE_SIDEBAR: { key: 'd', meta: true, shift: false },
   CYCLE_LAYOUT: { key: 't', meta: true, shift: false },
+  AUTO_REORGANIZE: { key: 'r', meta: true, shift: false },
   FOCUS_1: { key: '1', meta: true },
   FOCUS_2: { key: '2', meta: true },
   FOCUS_3: { key: '3', meta: true },

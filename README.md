@@ -1,19 +1,17 @@
 # Paneful
 
-A browser-based terminal multiplexer. Tmux-style pane management, project workspaces, and a CLI that spawns into a running instance. Ships as a single binary.
+A browser-based terminal multiplexer. Tmux-style pane management, project workspaces, and a CLI that spawns into a running instance.
 
-## Quick Start
+## Install
 
 ```bash
-# Build
-make build
+npm i -g paneful
+```
 
-# Run
-./target/release/paneful
+Or run without installing:
 
-# Or install globally
-make install
-paneful
+```bash
+npx paneful
 ```
 
 ## Usage
@@ -41,16 +39,17 @@ paneful --kill my-project   # Kill a project by name
 
 ## Keyboard Shortcuts
 
-| Shortcut | Action |
-|---|---|
-| `Cmd+N` | New pane (vertical split) |
-| `Cmd+Shift+N` | New pane (horizontal split) |
-| `Cmd+W` | Close focused pane |
-| `Cmd+1-9` | Focus pane by index |
-| `Cmd+Arrow` | Move focus to adjacent pane |
+| Shortcut          | Action                          |
+| ----------------- | ------------------------------- |
+| `Cmd+N`           | New pane (vertical split)       |
+| `Cmd+Shift+N`     | New pane (horizontal split)     |
+| `Cmd+W`           | Close focused pane              |
+| `Cmd+1-9`         | Focus pane by index             |
+| `Cmd+Arrow`       | Move focus to adjacent pane     |
 | `Cmd+Shift+Arrow` | Swap focused pane with adjacent |
-| `Cmd+D` | Toggle sidebar |
-| `Cmd+T` | Cycle through layout presets |
+| `Cmd+D`           | Toggle sidebar                  |
+| `Cmd+T`           | Cycle through layout presets    |
+| `Cmd+R`           | Auto reorganize panes           |
 
 ## Layout Presets
 
@@ -63,21 +62,32 @@ paneful --kill my-project   # Kill a project by name
 ## Development
 
 ```bash
-# Start Vite dev server + Rust backend (hot reload for frontend)
-make dev
+npm install && cd web && pnpm install && cd ..
+
+# Dev server (Vite frontend + Node.js backend, hot reload)
+npm run dev
+
+# Production build
+npm run build
+
+# Run locally
+npm start
 ```
 
-In dev mode, the Rust server proxies `/` to `localhost:5173` (Vite) while handling WebSocket and PTY on port 3000.
+Vite dev server proxies `/ws` and `/api` to `localhost:3000`. Open `http://localhost:5173` or use Chrome in app mode for full keyboard shortcut support:
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --app=http://localhost:5173
+```
 
 ## Architecture
 
-- **Backend**: Rust (Axum + portable-pty + tokio)
+- **Backend**: Node.js (Express + node-pty + ws)
 - **Frontend**: React + TypeScript + xterm.js + Zustand + Tailwind CSS
 - **Protocol**: JSON over a single WebSocket connection
-- **Distribution**: Single binary with embedded frontend (rust-embed)
+- **Distribution**: npm package (`npx paneful`)
 
 ## Requirements
 
-- Rust 1.70+
-- Node.js 18+ / pnpm
+- Node.js 18+
 - macOS or Linux

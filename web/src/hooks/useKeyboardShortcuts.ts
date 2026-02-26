@@ -5,11 +5,12 @@ import { useProjectStore } from '../stores/projectStore';
 import { useSessionStore } from '../stores/sessionStore';
 import { sendMessage } from './useWebSocket';
 import { cleanupTerminal } from './useTerminal';
-import { getTerminalIds, getAdjacentTerminal } from '../lib/layout-engine';
+import { getTerminalIds, getAdjacentTerminal, applyPreset } from '../lib/layout-engine';
+import type { PresetName } from '../lib/layout-engine';
 
 // Keys we need to hijack from the browser — must preventDefault in capture phase
 // BEFORE the browser's default handler fires
-const HIJACKED_KEYS = new Set(['n', 'w', 't', 'd']);
+const HIJACKED_KEYS = new Set(['n', 'w', 't', 'd', 'r']);
 
 export function useKeyboardShortcuts() {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
@@ -104,6 +105,19 @@ export function useKeyboardShortcuts() {
         if (ids.length > 0) {
           useLayoutStore.getState().cyclePreset(activeProjectId, ids);
         }
+        return;
+      }
+
+      // Cmd+R: auto reorganize
+      if (key === 'r' && !e.shiftKey) {
+        const ids = getTerminalIds(layout);
+        if (ids.length === 0) return;
+        let preset: PresetName;
+        if (ids.length <= 2) preset = 'even-vertical';
+        else if (ids.length === 3) preset = 'main-left';
+        else preset = 'grid';
+        const newLayout = applyPreset(ids, preset);
+        if (newLayout) useLayoutStore.getState().setLayout(activeProjectId, newLayout);
         return;
       }
 

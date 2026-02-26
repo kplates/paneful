@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Plus, PanelLeftClose } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 import { useLayoutStore } from '../../stores/layoutStore';
@@ -20,6 +20,8 @@ export function Sidebar() {
   const [launchDialogOpen, setLaunchDialogOpen] = useState(false);
   const [editingFavourite, setEditingFavourite] = useState<Favourite | null>(null);
   const [pendingLaunch, setPendingLaunch] = useState<Favourite | null>(null);
+  const [dropInitial, setDropInitial] = useState<{ name: string; cwd: string } | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const projects = useProjectStore((s) => s.projects);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
@@ -112,6 +114,48 @@ export function Sidebar() {
     setEditingFavourite(null);
   };
 
+  const handleSidebarDragOver = useCallback((e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      setIsDragOver(true);
+    }
+  }, []);
+
+  const handleSidebarDragLeave = useCallback((e: React.DragEvent) => {
+    // Only clear if leaving the sidebar itself, not a child
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleSidebarDrop = useCallback((e: React.DragEvent) => {
+    setIsDragOver(false);
+    if (!e.dataTransfer.types.includes('Files') || e.dataTransfer.files.length === 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Resolve the dropped folder/file path via the server
+    const file = e.dataTransfer.files[0];
+    fetch('/api/resolve-path', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: file.name, size: file.size, lastModified: file.lastModified }),
+    })
+      .then((r) => r.json())
+      .then((r: { path: string | null }) => {
+        const resolvedPath = r.path || file.name;
+        const folderName = resolvedPath.split('/').pop() || file.name;
+        setDropInitial({ name: folderName, cwd: resolvedPath });
+        setDialogOpen(true);
+      })
+      .catch(() => {
+        // Fallback: use just the filename
+        setDropInitial({ name: file.name, cwd: '~' });
+        setDialogOpen(true);
+      });
+  }, []);
+
   if (!sidebarOpen) return null;
 
   const projectList = Object.values(projects);
@@ -122,7 +166,12 @@ export function Sidebar() {
     : 0;
 
   return (
-    <div className="w-56 flex-shrink-0 bg-[var(--surface-1)] border-r border-[var(--border)] flex flex-col h-full">
+    <div
+      className={`w-56 flex-shrink-0 bg-[var(--surface-1)] border-r border-[var(--border)] flex flex-col h-full ${isDragOver ? 'ring-2 ring-inset ring-[var(--accent)]' : ''}`}
+      onDragOver={handleSidebarDragOver}
+      onDragLeave={handleSidebarDragLeave}
+      onDrop={handleSidebarDrop}
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
         <div className="flex items-center gap-2">
@@ -197,8 +246,10 @@ export function Sidebar() {
 
       <NewProjectDialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
+        onClose={() => { setDialogOpen(false); setDropInitial(null); }}
         onCreate={handleCreate}
+        initialName={dropInitial?.name}
+        initialCwd={dropInitial?.cwd}
       />
 
       <SaveFavouriteDialog

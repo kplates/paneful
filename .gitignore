@@ -1,7 +1,11 @@
-/target
+# Build output
+/dist
 
-# Frontend
+# Dependencies
+/node_modules
 /web/node_modules
+
+# Frontend build
 /web/dist
 /web/.vite
 

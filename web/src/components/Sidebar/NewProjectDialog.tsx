@@ -5,20 +5,22 @@ interface NewProjectDialogProps {
   open: boolean;
   onClose: () => void;
   onCreate: (name: string, cwd: string) => void;
+  initialName?: string;
+  initialCwd?: string;
 }
 
-export function NewProjectDialog({ open, onClose, onCreate }: NewProjectDialogProps) {
+export function NewProjectDialog({ open, onClose, onCreate, initialName, initialCwd }: NewProjectDialogProps) {
   const [name, setName] = useState('');
   const [cwd, setCwd] = useState('~');
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (open) {
-      setName('');
-      setCwd('~');
+      setName(initialName ?? '');
+      setCwd(initialCwd ?? '~');
       setTimeout(() => nameRef.current?.focus(), 50);
     }
-  }, [open]);
+  }, [open, initialName, initialCwd]);
 
   if (!open) return null;
 

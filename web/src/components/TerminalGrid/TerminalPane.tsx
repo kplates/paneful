@@ -41,6 +41,50 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
     useUIStore.getState().setFocusedTerminal(remaining[0] ?? null);
   }, [terminalId, projectId]);
 
+  const handleFileDrop = useCallback((e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes('Files') && e.dataTransfer.files.length > 0) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      // Resolve each file's full path via the server (uses Spotlight/locate)
+      const files = Array.from(e.dataTransfer.files);
+      Promise.all(
+        files.map((f) =>
+          fetch('/api/resolve-path', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: f.name, size: f.size, lastModified: f.lastModified }),
+          })
+            .then((r) => r.json())
+            .then((r: { path: string | null }) => r.path)
+            .catch(() => null)
+        )
+      ).then((paths) => {
+        const resolved = paths.filter(Boolean) as string[];
+        if (resolved.length > 0) {
+          const escaped = resolved.map((p) =>
+            /[  ()'"]/.test(p) ? `'${p.replace(/'/g, "'\\''")}'` : p
+          );
+          sendMessage({ type: 'pty:input', terminalId, data: escaped.join(' ') });
+          focus();
+        }
+      });
+      return;
+    }
+    dragProps.onDrop(e);
+  }, [terminalId, dragProps, focus]);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    // Allow file drops from OS
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      return;
+    }
+    dragProps.onDragOver(e);
+  }, [dragProps]);
+
+
   return (
     <div
       style={{
@@ -52,9 +96,9 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
         transition-colors duration-100
       `}
       onClick={focus}
-      onDragOver={dragProps.onDragOver}
+      onDragOver={handleDragOver}
       onDragLeave={dragProps.onDragLeave}
-      onDrop={dragProps.onDrop}
+      onDrop={handleFileDrop}
     >
       <PaneHeader
         terminalId={terminalId}

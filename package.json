@@ -1,0 +1,60 @@
+{
+  "name": "paneful",
+  "version": "0.1.0",
+  "description": "Browser-based terminal multiplexer with tmux-style pane management",
+  "type": "module",
+  "bin": {
+    "paneful": "./dist/server/index.js"
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "npm run build:web && npm run build:server",
+    "build:web": "cd web && pnpm install && pnpm build && mkdir -p ../dist/web && cp -r dist/* ../dist/web/",
+    "build:server": "tsc -p tsconfig.server.json",
+    "dev": "concurrently \"cd web && pnpm dev\" \"tsx server/index.ts --dev --port 3000\"",
+    "postinstall": "node -e \"const p=require('path'),fs=require('fs'),d=p.join(__dirname,'node_modules','node-pty','prebuilds');if(fs.existsSync(d))for(const s of fs.readdirSync(d)){const h=p.join(d,s,'spawn-helper');if(fs.existsSync(h))fs.chmodSync(h,0o755)}\"",
+    "start": "node dist/server/index.js --port 3000",
+    "clean": "rm -rf dist && rm -rf web/dist",
+    "prepublishOnly": "npm run build",
+    "release": "npm publish",
+    "release:patch": "npm version patch && npm publish",
+    "release:minor": "npm version minor && npm publish",
+    "release:major": "npm version major && npm publish"
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "express": "^4.21.0",
+    "node-pty": "^1.0.0",
+    "open": "^10.1.0",
+    "uuid": "^10.0.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.0.0",
+    "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.5.12",
+    "concurrently": "^9.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kplates/paneful.git"
+  },
+  "homepage": "https://github.com/kplates/paneful",
+  "bugs": "https://github.com/kplates/paneful/issues",
+  "keywords": [
+    "terminal",
+    "multiplexer",
+    "tmux",
+    "pane",
+    "pty"
+  ]
+}

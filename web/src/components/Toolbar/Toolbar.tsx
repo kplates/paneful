@@ -8,7 +8,7 @@ import {
   PanelTop,
   Grid2X2,
   PanelLeftOpen,
-  Keyboard,
+  Info,
   LayoutDashboard,
   Star,
 } from 'lucide-react';
@@ -19,6 +19,7 @@ import { useFavouriteStore, TerminalSlot } from '../../stores/favouriteStore';
 import { getTerminalIds, applyPreset } from '../../lib/layout-engine';
 import { PRESET_NAMES, PresetName } from '../../lib/layout-engine';
 import { SaveFavouriteDialog } from '../Sidebar/SaveFavouriteDialog';
+import { ShortcutsDialog } from '../ShortcutsDialog';
 
 const presetIcons: Record<PresetName, React.ReactNode> = {
   'even-horizontal': <Rows2 size={14} />,
@@ -42,6 +43,7 @@ interface ToolbarProps {
 
 export function Toolbar({ onNewPane }: ToolbarProps) {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   const sidebarOpen = useUIStore((s) => s.sidebarOpen);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
@@ -154,15 +156,14 @@ export function Toolbar({ onNewPane }: ToolbarProps) {
 
       <div className="flex-1" />
 
-      {/* Keyboard shortcuts hint */}
-      <div className="hidden md:flex items-center gap-1 text-[10px] text-[var(--text-muted)]">
-        <Keyboard size={10} />
-        <span>Cmd+N split</span>
-        <span className="mx-1">|</span>
-        <span>Cmd+W close</span>
-        <span className="mx-1">|</span>
-        <span>Cmd+D sidebar</span>
-      </div>
+      {/* Keyboard shortcuts */}
+      <button
+        onClick={() => setShortcutsOpen(true)}
+        className="p-1.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)] transition-colors"
+        title="Keyboard shortcuts"
+      >
+        <Info size={14} />
+      </button>
 
       <SaveFavouriteDialog
         open={saveDialogOpen}
@@ -171,6 +172,8 @@ export function Toolbar({ onNewPane }: ToolbarProps) {
         defaultPreset={currentPreset}
         defaultSlotCount={Math.max(currentTerminalCount, 1)}
       />
+
+      <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </div>
   );
 }

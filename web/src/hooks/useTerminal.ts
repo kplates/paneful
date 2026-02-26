@@ -118,6 +118,19 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
     createSession(terminalId, projectId);
     setTerminalInstance(terminalId, term);
 
+    // Shift+Enter → insert a literal newline in the shell command buffer.
+    // We send Ctrl+V (\x16 = quoted-insert) followed by newline (\n).
+    // This tells zsh/bash to insert the next char literally instead of executing.
+    term.attachCustomKeyEventHandler((e) => {
+      if (e.key === 'Enter' && e.shiftKey) {
+        if (e.type === 'keydown') {
+          sendMessage({ type: 'pty:input', terminalId, data: '\x16\n' });
+        }
+        return false;
+      }
+      return true;
+    });
+
     // Pipe user keystrokes to the backend
     term.onData((data) => {
       sendMessage({ type: 'pty:input', terminalId, data });
