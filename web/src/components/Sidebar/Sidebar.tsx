@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { Plus, PanelLeftClose } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Plus, PanelLeftClose, ArrowUpCircle } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 import { useLayoutStore } from '../../stores/layoutStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -22,6 +22,18 @@ export function Sidebar() {
   const [pendingLaunch, setPendingLaunch] = useState<Favourite | null>(null);
   const [dropInitial, setDropInitial] = useState<{ name: string; cwd: string } | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<{ current: string; latest: string } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/version')
+      .then((res) => res.json())
+      .then((data: { current: string; latest: string | null }) => {
+        if (data.latest && isNewerVersion(data.latest, data.current)) {
+          setUpdateInfo({ current: data.current, latest: data.latest });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const projects = useProjectStore((s) => s.projects);
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
@@ -143,17 +155,14 @@ export function Sidebar() {
       body: JSON.stringify({ name: file.name, size: file.size, lastModified: file.lastModified }),
     })
       .then((r) => r.json())
-      .then((r: { path: string | null }) => {
-        const resolvedPath = r.path || file.name;
+      .then((r: { path: string | null; isDirectory?: boolean }) => {
+        if (!r.path || !r.isDirectory) return;
+        const resolvedPath = r.path;
         const folderName = resolvedPath.split('/').pop() || file.name;
         setDropInitial({ name: folderName, cwd: resolvedPath });
         setDialogOpen(true);
       })
-      .catch(() => {
-        // Fallback: use just the filename
-        setDropInitial({ name: file.name, cwd: '~' });
-        setDialogOpen(true);
-      });
+      .catch(() => {});
   }, []);
 
   if (!sidebarOpen) return null;
@@ -244,6 +253,23 @@ export function Sidebar() {
         </button>
       </div>
 
+      {updateInfo && (
+        <div className="px-4 py-3 border-t border-[var(--border)]">
+          <a
+            href="https://www.npmjs.com/package/paneful"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-xs text-[var(--accent)] hover:underline"
+          >
+            <ArrowUpCircle size={14} />
+            <span>v{updateInfo.latest} available (current: v{updateInfo.current})</span>
+          </a>
+          <p className="text-[10px] text-[var(--text-muted)] mt-1">
+            npm update -g paneful
+          </p>
+        </div>
+      )}
+
       <NewProjectDialog
         open={dialogOpen}
         onClose={() => { setDialogOpen(false); setDropInitial(null); }}
@@ -268,4 +294,14 @@ export function Sidebar() {
       />
     </div>
   );
+}
+
+function isNewerVersion(latest: string, current: string): boolean {
+  const l = latest.split('.').map(Number);
+  const c = current.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((l[i] || 0) > (c[i] || 0)) return true;
+    if ((l[i] || 0) < (c[i] || 0)) return false;
+  }
+  return false;
 }

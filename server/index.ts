@@ -14,6 +14,41 @@ import { WsHandler } from './ws-handler.js';
 import { startIpcListener, sendIpcCommand } from './ipc.js';
 import { openBrowser } from './browser.js';
 
+// ── Version check ──
+
+const PKG_NAME = 'paneful';
+
+function findPackageJson(): string | null {
+  let dir = import.meta.dirname;
+  for (let i = 0; i < 5; i++) {
+    const p = path.join(dir, 'package.json');
+    if (fs.existsSync(p)) return p;
+    dir = path.dirname(dir);
+  }
+  return null;
+}
+
+const pkgPath = findPackageJson();
+const CURRENT_VERSION = pkgPath ? JSON.parse(fs.readFileSync(pkgPath, 'utf-8')).version : '0.0.0';
+
+let cachedLatest: { version: string; checkedAt: number } | null = null;
+const CACHE_TTL = 3_600_000; // 1 hour
+
+async function getLatestVersion(): Promise<string | null> {
+  if (cachedLatest && Date.now() - cachedLatest.checkedAt < CACHE_TTL) {
+    return cachedLatest.version;
+  }
+  try {
+    const res = await fetch(`https://registry.npmjs.org/${PKG_NAME}/latest`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    cachedLatest = { version: data.version, checkedAt: Date.now() };
+    return data.version;
+  } catch {
+    return null;
+  }
+}
+
 // ── Paths ──
 
 function dataDir(): string {
@@ -171,6 +206,11 @@ function startServer(devMode: boolean, port: number): void {
     res.status(204).end();
   });
 
+  app.get('/api/version', async (_req, res) => {
+    const latest = await getLatestVersion();
+    res.json({ current: CURRENT_VERSION, latest });
+  });
+
   app.post('/api/projects/:id/kill', (req, res) => {
     const killed = ptyManager.killProject(req.params.id);
     res.json({ killed: killed.length });
@@ -206,17 +246,27 @@ function startServer(devMode: boolean, port: number): void {
       return best?.path ?? candidates[0];
     };
 
+    const respond = (resolved: string | null) => {
+      if (!resolved) { res.json({ path: null }); return; }
+      try {
+        const isDirectory = fs.statSync(resolved).isDirectory();
+        res.json({ path: resolved, isDirectory });
+      } catch {
+        res.json({ path: resolved, isDirectory: false });
+      }
+    };
+
     if (process.platform === 'darwin') {
       execFile('mdfind', [`kMDItemFSName == '${name.replace(/'/g, "\\'")}'`], (err, stdout) => {
-        if (err) { res.json({ path: null }); return; }
+        if (err) { respond(null); return; }
         const candidates = stdout.trim().split('\n').filter(Boolean);
-        res.json({ path: findBest(candidates) });
+        respond(findBest(candidates));
       });
     } else {
       execFile('locate', ['-l', '20', '-b', `\\${name}`], (err, stdout) => {
-        if (err) { res.json({ path: null }); return; }
+        if (err) { respond(null); return; }
         const candidates = stdout.trim().split('\n').filter(Boolean);
-        res.json({ path: findBest(candidates) });
+        respond(findBest(candidates));
       });
     }
   });
