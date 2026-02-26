@@ -42,6 +42,31 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
   }, [terminalId, projectId]);
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
+    // VS Code/Cursor drops: path in text/plain or codefiles, no Files
+    if (e.dataTransfer.types.includes('codefiles') || e.dataTransfer.types.includes('text/plain')) {
+      const codefiles = e.dataTransfer.getData('codefiles');
+      let paths: string[] = [];
+      if (codefiles) {
+        try { paths = JSON.parse(codefiles); } catch { /* ignore */ }
+      }
+      if (paths.length === 0) {
+        const plain = e.dataTransfer.getData('text/plain').trim();
+        if (plain && plain.startsWith('/')) {
+          paths = plain.split('\n').map((p) => p.trim()).filter(Boolean);
+        }
+      }
+      if (paths.length > 0 && !e.dataTransfer.types.includes('Files')) {
+        e.preventDefault();
+        e.stopPropagation();
+        const escaped = paths.map((p) =>
+          /[ ()'"]/.test(p) ? `'${p.replace(/'/g, "'\\''")}'` : p
+        );
+        sendMessage({ type: 'pty:input', terminalId, data: escaped.join(' ') });
+        focus();
+        return;
+      }
+    }
+
     if (e.dataTransfer.types.includes('Files') && e.dataTransfer.files.length > 0) {
       e.preventDefault();
       e.stopPropagation();
@@ -63,7 +88,7 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
         const resolved = paths.filter(Boolean) as string[];
         if (resolved.length > 0) {
           const escaped = resolved.map((p) =>
-            /[  ()'"]/.test(p) ? `'${p.replace(/'/g, "'\\''")}'` : p
+            /[ ()'"]/.test(p) ? `'${p.replace(/'/g, "'\\''")}'` : p
           );
           sendMessage({ type: 'pty:input', terminalId, data: escaped.join(' ') });
           focus();
@@ -75,8 +100,8 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
   }, [terminalId, dragProps, focus]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
-    // Allow file drops from OS
-    if (e.dataTransfer.types.includes('Files')) {
+    // Allow file drops from OS or editors (VS Code/Cursor)
+    if (e.dataTransfer.types.includes('Files') || e.dataTransfer.types.includes('codefiles') || e.dataTransfer.types.includes('text/plain')) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'copy';
       return;

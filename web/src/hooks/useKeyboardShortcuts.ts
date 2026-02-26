@@ -38,7 +38,8 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      const meta = e.metaKey || e.ctrlKey;
+      const isMac = navigator.platform.startsWith('Mac');
+      const meta = isMac ? e.metaKey : e.ctrlKey;
       if (!meta) return;
 
       // Immediately block browser defaults for our shortcuts

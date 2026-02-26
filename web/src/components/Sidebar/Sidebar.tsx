@@ -156,6 +156,7 @@ export function Sidebar() {
     })
       .then((r) => r.json())
       .then((r: { path: string | null; isDirectory?: boolean }) => {
+        console.log('[drop] resolve-path response:', r);
         if (!r.path || !r.isDirectory) return;
         const resolvedPath = r.path;
         const folderName = resolvedPath.split('/').pop() || file.name;
