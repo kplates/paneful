@@ -1,0 +1,152 @@
+import { useEffect } from 'react';
+import { useUIStore } from '../stores/uiStore';
+import { useLayoutStore } from '../stores/layoutStore';
+import { useProjectStore } from '../stores/projectStore';
+import { useSessionStore } from '../stores/sessionStore';
+import { sendMessage } from './useWebSocket';
+import { cleanupTerminal } from './useTerminal';
+import { getTerminalIds, getAdjacentTerminal } from '../lib/layout-engine';
+
+// Keys we need to hijack from the browser — must preventDefault in capture phase
+// BEFORE the browser's default handler fires
+const HIJACKED_KEYS = new Set(['n', 'w', 't', 'd']);
+
+export function useKeyboardShortcuts() {
+  const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const setFocusedTerminal = useUIStore((s) => s.setFocusedTerminal);
+
+  useEffect(() => {
+    // Capture phase handler — runs before the browser processes the shortcut
+    const handler = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+
+      // Option+Arrow: swap focused pane with adjacent
+      if (e.altKey && !e.metaKey && !e.ctrlKey && ['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        const activeProjectId = useProjectStore.getState().activeProjectId;
+        if (!activeProjectId) return;
+        const layout = useLayoutStore.getState().getLayout(activeProjectId);
+        const focusedId = useUIStore.getState().focusedTerminalId;
+        if (!focusedId || !layout) return;
+        const dir = key === 'arrowleft' ? 'left' : key === 'arrowright' ? 'right' : key === 'arrowup' ? 'up' : 'down';
+        const adjacent = getAdjacentTerminal(layout, focusedId, dir as 'left' | 'right' | 'up' | 'down');
+        if (adjacent) {
+          useLayoutStore.getState().swapPanesInProject(activeProjectId, focusedId, adjacent);
+        }
+        return;
+      }
+
+      const meta = e.metaKey || e.ctrlKey;
+      if (!meta) return;
+
+      // Immediately block browser defaults for our shortcuts
+      // This must happen BEFORE any early returns, otherwise the browser
+      // will open a new window (Cmd+N), close the tab (Cmd+W), etc.
+      if (HIJACKED_KEYS.has(key) || (key >= '1' && key <= '9') ||
+          ['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      const activeProjectId = useProjectStore.getState().activeProjectId;
+      if (!activeProjectId) return;
+
+      const layout = useLayoutStore.getState().getLayout(activeProjectId);
+      const focusedId = useUIStore.getState().focusedTerminalId;
+      const project = useProjectStore.getState().projects[activeProjectId];
+
+      // Cmd+D: toggle sidebar
+      if (key === 'd' && !e.shiftKey) {
+        toggleSidebar();
+        return;
+      }
+
+      // Cmd+N: new terminal
+      if (key === 'n') {
+        if (!project) return;
+        const newId = crypto.randomUUID();
+        const ids = getTerminalIds(layout);
+        if (ids.length > 0) {
+          // Add next to focused (or last) pane
+          const refId = focusedId ?? ids[ids.length - 1];
+          const dir = e.shiftKey ? 'horizontal' : 'vertical';
+          useLayoutStore.getState().addPaneToProject(activeProjectId, refId, newId, dir);
+        } else {
+          useLayoutStore.getState().setLayout(activeProjectId, { type: 'leaf', terminalId: newId });
+        }
+        useProjectStore.getState().addTerminalToProject(activeProjectId, newId);
+        setFocusedTerminal(newId);
+        return;
+      }
+
+      // Cmd+W: close pane
+      if (key === 'w' && !e.shiftKey) {
+        if (!focusedId || !layout) return;
+        sendMessage({ type: 'pty:kill', terminalId: focusedId });
+        useLayoutStore.getState().removePaneFromProject(activeProjectId, focusedId);
+        useProjectStore.getState().removeTerminalFromProject(activeProjectId, focusedId);
+        const session = useSessionStore.getState().sessions[focusedId];
+        session?.terminal?.dispose();
+        useSessionStore.getState().removeSession(focusedId);
+        cleanupTerminal(focusedId);
+        const remaining = getTerminalIds(
+          useLayoutStore.getState().getLayout(activeProjectId)
+        );
+        setFocusedTerminal(remaining[0] ?? null);
+        return;
+      }
+
+      // Cmd+T: cycle layout preset
+      if (key === 't' && !e.shiftKey) {
+        if (!project) return;
+        const ids = getTerminalIds(layout);
+        if (ids.length > 0) {
+          useLayoutStore.getState().cyclePreset(activeProjectId, ids);
+        }
+        return;
+      }
+
+      // Cmd+Arrow: move focus
+      if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key) && !e.shiftKey) {
+        if (!focusedId || !layout) return;
+        const dir = key === 'arrowleft' ? 'left' : key === 'arrowright' ? 'right' : key === 'arrowup' ? 'up' : 'down';
+        const adjacent = getAdjacentTerminal(layout, focusedId, dir as 'left' | 'right' | 'up' | 'down');
+        if (adjacent) {
+          setFocusedTerminal(adjacent);
+          const session = useSessionStore.getState().sessions[adjacent];
+          session?.terminal?.focus();
+        }
+        return;
+      }
+
+      // Cmd+Shift+Arrow: swap with adjacent
+      if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key) && e.shiftKey) {
+        if (!focusedId || !layout) return;
+        const dir = key === 'arrowleft' ? 'left' : key === 'arrowright' ? 'right' : key === 'arrowup' ? 'up' : 'down';
+        const adjacent = getAdjacentTerminal(layout, focusedId, dir as 'left' | 'right' | 'up' | 'down');
+        if (adjacent) {
+          useLayoutStore.getState().swapPanesInProject(activeProjectId, focusedId, adjacent);
+        }
+        return;
+      }
+
+      // Cmd+1-9: focus pane by index
+      const num = parseInt(key);
+      if (num >= 1 && num <= 9) {
+        const ids = getTerminalIds(layout);
+        const target = ids[num - 1];
+        if (target) {
+          setFocusedTerminal(target);
+          const session = useSessionStore.getState().sessions[target];
+          session?.terminal?.focus();
+        }
+        return;
+      }
+    };
+
+    // CAPTURE PHASE — this is critical to beat the browser's built-in shortcuts
+    window.addEventListener('keydown', handler, { capture: true });
+    return () => window.removeEventListener('keydown', handler, { capture: true });
+  }, [toggleSidebar, setFocusedTerminal]);
+}

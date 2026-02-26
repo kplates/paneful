@@ -1,0 +1,16 @@
+// Client → Server
+export type ClientMessage =
+  | { type: 'pty:spawn'; terminalId: string; projectId: string; cwd: string }
+  | { type: 'pty:input'; terminalId: string; data: string }
+  | { type: 'pty:resize'; terminalId: string; cols: number; rows: number }
+  | { type: 'pty:kill'; terminalId: string }
+  | { type: 'project:kill'; projectId: string }
+  | { type: 'project:create'; projectId: string; name: string; cwd: string }
+  | { type: 'project:remove'; projectId: string };
+
+// Server → Client
+export type ServerMessage =
+  | { type: 'pty:output'; terminalId: string; data: string }
+  | { type: 'pty:exit'; terminalId: string; exitCode: number }
+  | { type: 'project:spawned'; projectId: string; name: string; cwd: string }
+  | { type: 'error'; message: string };
