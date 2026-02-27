@@ -1,2 +1,0 @@
-- Open in vscode/ cursor highlight
-- control + r doesn't work
