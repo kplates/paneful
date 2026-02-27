@@ -245,11 +245,9 @@ function startServer(devMode: boolean, port: number): void {
       }
 
       const processes = stdout.trim().split('\n').map((p) => p.trim()).filter(Boolean);
-      console.log('[active-editor] processes:', processes);
       const editorProcess = processes.find((p) =>
         editorPatterns.some((pat) => p.toLowerCase().includes(pat))
       );
-      console.log('[active-editor] matched:', editorProcess ?? 'none');
 
       if (!editorProcess) {
         res.json({ projectName: null });
@@ -268,23 +266,33 @@ function startServer(devMode: boolean, port: number): void {
         return ""
       `;
 
-      execFile('osascript', ['-e', titleScript], { timeout: 2000 }, (err2, stdout2, stderr2) => {
-        console.log('[active-editor] title stdout:', JSON.stringify(stdout2));
-        console.log('[active-editor] title err:', err2?.message ?? 'none');
+      execFile('osascript', ['-e', titleScript], { timeout: 2000 }, (err2, stdout2) => {
         if (err2 || !stdout2.trim()) {
           res.json({ projectName: null });
           return;
         }
 
         const title = stdout2.trim();
-        // Editor titles: "file — project — Editor" or "project — Editor"
-        const parts = title.split(' \u2014 ');
         let projectName: string | null = null;
-        if (parts.length >= 3) {
-          projectName = parts[parts.length - 2];
-        } else if (parts.length === 2) {
-          projectName = parts[0];
+
+        // Try to extract a path from the title (e.g. "~/Documents/source/foo - branch")
+        const pathMatch = title.match(/^(~?\/[^\s]+)/);
+        if (pathMatch) {
+          // Grab the deepest folder from the path
+          const segments = pathMatch[1].replace(/\/$/, '').split('/');
+          projectName = segments[segments.length - 1] || null;
         }
+
+        // Fallback: default title format "file — project — Editor" or "project — Editor"
+        if (!projectName) {
+          const parts = title.split(' \u2014 ');
+          if (parts.length >= 3) {
+            projectName = parts[parts.length - 2];
+          } else if (parts.length === 2) {
+            projectName = parts[0];
+          }
+        }
+
         res.json({ projectName });
       });
     });
