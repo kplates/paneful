@@ -1,5 +1,49 @@
-import { execFile } from 'node:child_process';
+import { execFile, execSync } from 'node:child_process';
 import fs from 'node:fs';
+
+/** Try to focus an existing Paneful browser window. Returns true if successful. */
+export function focusBrowser(_port: number): boolean {
+  if (process.platform !== 'darwin') return false;
+
+  // App-mode Chrome windows don't have normal tabs — match by window title instead.
+  // The HTML <title> is "Paneful", so any app-mode or regular window showing the app
+  // will have "Paneful" in its title.
+  const browsers = ['Google Chrome', 'Chromium', 'Microsoft Edge', 'Brave Browser', 'Arc'];
+
+  for (const browser of browsers) {
+    const lines = [
+      `tell application "System Events"`,
+      `  if not (exists process "${browser}") then return false`,
+      `end tell`,
+      `tell application "${browser}"`,
+      `  repeat with w in windows`,
+      `    if title of w contains "Paneful" then`,
+      `      set index of w to 1`,
+      `      activate`,
+      `      return true`,
+      `    end if`,
+      `  end repeat`,
+      `  return false`,
+      `end tell`,
+    ];
+    const args = lines.flatMap((l) => ['-e', l]);
+
+    try {
+      const result = execSync(`osascript ${args.map((a) => JSON.stringify(a)).join(' ')}`, {
+        timeout: 3000,
+        encoding: 'utf-8',
+      }).trim();
+      if (result === 'true') {
+        console.log(`Focused existing Paneful window (${browser})`);
+        return true;
+      }
+    } catch {
+      // This browser not running or doesn't have the window
+    }
+  }
+
+  return false;
+}
 
 export function openBrowser(port: number): void {
   const url = `http://localhost:${port}`;

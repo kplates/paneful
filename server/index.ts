@@ -12,7 +12,7 @@ import { PtyManager } from './pty-manager.js';
 import { ProjectStore } from './project-store.js';
 import { WsHandler } from './ws-handler.js';
 import { startIpcListener, sendIpcCommand } from './ipc.js';
-import { openBrowser } from './browser.js';
+import { openBrowser, focusBrowser } from './browser.js';
 
 // ── Version check ──
 
@@ -394,7 +394,9 @@ function startServer(devMode: boolean, port: number): void {
     console.log(`Paneful running on http://localhost:${actualPort}`);
 
     if (!devMode) {
-      openBrowser(actualPort);
+      if (!focusBrowser(actualPort)) {
+        openBrowser(actualPort);
+      }
     }
   });
 
@@ -442,7 +444,9 @@ program
     const lock = readLockfile();
     if (lock && isProcessAlive(lock.pid)) {
       console.log(`Paneful already running on port ${lock.port}`);
-      openBrowser(lock.port);
+      if (!focusBrowser(lock.port)) {
+        openBrowser(lock.port);
+      }
       return;
     }
     if (lock) {
