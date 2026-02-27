@@ -37,6 +37,40 @@ paneful --list              # List all projects
 paneful --kill my-project   # Kill a project by name
 ```
 
+## Features
+
+### Drag & Drop Projects
+
+Drag a folder from Finder into the sidebar to create a new project with the path pre-filled.
+
+### Drag Files into Terminals
+
+Drag files from Finder or your editor (VS Code, Cursor) into a terminal pane to paste their paths as shell-escaped arguments.
+
+### Favourites
+
+Save a workspace layout as a favourite — name, layout preset, and per-pane commands. Launch any favourite with a click to instantly recreate the setup. Managed from the star icon in the toolbar and the favourites section in the sidebar.
+
+### Editor Sync
+
+Automatically switches the active project based on which editor window is in focus. Works with VS Code, Cursor, Zed, and Windsurf on macOS. Toggle via the monitor icon in the sidebar header.
+
+Requires:
+1. Terminal app added to **System Settings > Privacy & Security > Accessibility**
+2. Editor window title includes the folder name (default in VS Code/Cursor)
+
+### Resizable Sidebar
+
+Drag the right edge of the sidebar to resize it. Width persists across sessions.
+
+### Auto-Reorganize
+
+Press `Cmd+R` or click the dashboard icon in the toolbar to automatically pick the best layout for your current pane count.
+
+### Update Notifications
+
+Paneful checks for newer versions on npm and shows a notification in the sidebar when an update is available.
+
 ## Keyboard Shortcuts
 
 | Shortcut          | Action                          |
