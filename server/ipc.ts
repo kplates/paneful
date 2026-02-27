@@ -87,11 +87,11 @@ function handleIpcRequest(
 ): IpcResponse {
   switch (request.command) {
     case 'spawn': {
+      // Always send to frontend — it deduplicates by cwd
       const id = uuidv4();
       const project = newProject(id, request.name, request.cwd);
       projectStore.create(project);
 
-      // Notify the frontend
       wsHandler.send({
         type: 'project:spawned',
         projectId: id,

@@ -55,6 +55,12 @@ export function Sidebar() {
   const removeFavourite = useFavouriteStore((s) => s.removeFavourite);
 
   const handleCreate = (name: string, cwd: string) => {
+    // Don't create duplicate project for the same directory
+    const existing = Object.values(projects).find((p) => p.cwd === cwd);
+    if (existing) {
+      setActiveProject(existing.id);
+      return;
+    }
     const id = crypto.randomUUID();
     addProject({ id, name, cwd, terminalIds: [] });
     sendMessage({ type: 'project:create', projectId: id, name, cwd });

@@ -228,91 +228,73 @@ function startServer(devMode: boolean, port: number): void {
     }
   });
 
-  // Active editor detection — polls server-side so the client gets an instant cached response
+  // Active editor detection — single AppleScript gets frontmost app + window title
   const editorPatterns = ['cursor', 'code', 'vscode', 'visual studio code', 'zed', 'windsurf'];
   let editorCache: { projectName: string | null; needsAccessibility?: boolean } = { projectName: null };
+
+  const editorScript = `
+    tell application "System Events"
+      set frontApp to name of first application process whose frontmost is true
+      set winTitle to ""
+      tell process frontApp
+        if exists front window then
+          set winTitle to name of front window
+        end if
+      end tell
+      return frontApp & linefeed & winTitle
+    end tell
+  `;
 
   function pollActiveEditor() {
     if (process.platform !== 'darwin') return;
 
-    const findScript = `
-      tell application "System Events"
-        set procNames to name of every process whose background only is false
-        set output to ""
-        repeat with p in procNames
-          set output to output & p & linefeed
-        end repeat
-        return output
-      end tell
-    `;
-
-    execFile('osascript', ['-e', findScript], { timeout: 2000 }, (err, stdout, stderr) => {
+    execFile('osascript', ['-e', editorScript], { timeout: 2000 }, (err, stdout, stderr) => {
       if (err) {
         const needsAccess = stderr?.includes('not allowed assistive access') || stderr?.includes('1719');
         editorCache = { projectName: null, needsAccessibility: needsAccess || undefined };
         return;
       }
 
-      const processes = stdout.trim().split('\n').map((p) => p.trim()).filter(Boolean);
-      const editorProcess = processes.find((p) =>
-        editorPatterns.some((pat) => p.toLowerCase().includes(pat))
-      );
+      const lines = stdout.trim().split('\n');
+      const appName = (lines[0] || '').trim();
+      const title = (lines[1] || '').trim();
 
-      if (!editorProcess) {
+      const isEditor = editorPatterns.some((pat) => appName.toLowerCase().includes(pat));
+      if (!isEditor || !title) {
         editorCache = { projectName: null };
         return;
       }
 
-      const titleScript = `
-        tell application "System Events"
-          tell process "${editorProcess.replace(/"/g, '\\"')}"
-            if exists front window then
-              return name of front window
-            end if
-          end tell
-        end tell
-        return ""
-      `;
+      let projectName: string | null = null;
 
-      execFile('osascript', ['-e', titleScript], { timeout: 2000 }, (err2, stdout2) => {
-        if (err2 || !stdout2.trim()) {
-          editorCache = { projectName: null };
-          return;
+      // Try to extract a path from the title (e.g. "~/Documents/source/foo - branch")
+      const pathMatch = title.match(/^(~?\/[^\s]+)/);
+      if (pathMatch) {
+        const segments = pathMatch[1].replace(/\/$/, '').split('/');
+        projectName = segments[segments.length - 1] || null;
+      }
+
+      // Fallback: default title format "file — project — Editor" or "project — Editor"
+      if (!projectName) {
+        const parts = title.split(' \u2014 ');
+        if (parts.length >= 3) {
+          projectName = parts[parts.length - 2];
+        } else if (parts.length === 2) {
+          projectName = parts[0];
         }
+      }
 
-        const title = stdout2.trim();
-        let projectName: string | null = null;
-
-        // Try to extract a path from the title (e.g. "~/Documents/source/foo - branch")
-        const pathMatch = title.match(/^(~?\/[^\s]+)/);
-        if (pathMatch) {
-          const segments = pathMatch[1].replace(/\/$/, '').split('/');
-          projectName = segments[segments.length - 1] || null;
-        }
-
-        // Fallback: default title format "file — project — Editor" or "project — Editor"
-        if (!projectName) {
-          const parts = title.split(' \u2014 ');
-          if (parts.length >= 3) {
-            projectName = parts[parts.length - 2];
-          } else if (parts.length === 2) {
-            projectName = parts[0];
-          }
-        }
-
-        const prev = editorCache.projectName;
-        editorCache = { projectName };
-        // Push change to client over WebSocket
-        if (projectName && projectName !== prev) {
-          wsHandler.send({ type: 'editor:active', projectName });
-        }
-      });
+      const prev = editorCache.projectName;
+      editorCache = { projectName };
+      if (projectName && projectName !== prev) {
+        wsHandler.send({ type: 'editor:active', projectName });
+      }
     });
   }
 
-  // Poll every 2 seconds server-side
+  // Poll every 500ms — single osascript call is fast
   pollActiveEditor();
-  setInterval(pollActiveEditor, 2000);
+  setInterval(pollActiveEditor, 500);
 
   app.get('/api/active-editor', (_req, res) => {
     res.json(editorCache);

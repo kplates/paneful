@@ -58,6 +58,13 @@ export class ProjectStore {
     return undefined;
   }
 
+  findByCwd(cwd: string): Project | undefined {
+    for (const p of this.projects.values()) {
+      if (p.cwd === cwd) return p;
+    }
+    return undefined;
+  }
+
   addTerminal(projectId: string, terminalId: string): void {
     const project = this.projects.get(projectId);
     if (project && !project.terminal_ids.includes(terminalId)) {

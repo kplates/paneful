@@ -88,13 +88,20 @@ export function useWebSocket() {
 
         // Handle project spawned (from CLI --spawn)
         if (msg.type === 'project:spawned') {
-          addProject({
-            id: msg.projectId,
-            name: msg.name,
-            cwd: msg.cwd,
-            terminalIds: [],
-          });
-          setActiveProject(msg.projectId);
+          // Check if a project with this cwd already exists in the frontend
+          const existing = Object.values(useProjectStore.getState().projects)
+            .find((p) => p.cwd === msg.cwd);
+          if (existing) {
+            setActiveProject(existing.id);
+          } else {
+            addProject({
+              id: msg.projectId,
+              name: msg.name,
+              cwd: msg.cwd,
+              terminalIds: [],
+            });
+            setActiveProject(msg.projectId);
+          }
           return;
         }
 
