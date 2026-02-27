@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { useEditorFocus } from './hooks/useEditorFocus';
 import { useProjectStore } from './stores/projectStore';
 import { useLayoutStore } from './stores/layoutStore';
 import { useUIStore } from './stores/uiStore';
@@ -14,6 +15,7 @@ import { Direction } from './lib/layout-engine';
 export function App() {
   useWebSocket();
   useKeyboardShortcuts();
+  useEditorFocus();
 
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeProject = useProjectStore((s) =>
