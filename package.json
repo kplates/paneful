@@ -1,6 +1,6 @@
 {
   "name": "paneful",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Browser-based terminal multiplexer with tmux-style pane management",
   "type": "module",
   "bin": {
@@ -15,7 +15,7 @@
     "build:server": "tsc -p tsconfig.server.json",
     "dev": "concurrently \"cd web && pnpm dev\" \"tsx server/index.ts --dev --port 3000\"",
     "postinstall": "node -e \"const p=require('path'),fs=require('fs'),d=p.join(__dirname,'node_modules','node-pty','prebuilds');if(fs.existsSync(d))for(const s of fs.readdirSync(d)){const h=p.join(d,s,'spawn-helper');if(fs.existsSync(h))fs.chmodSync(h,0o755)}\"",
-    "start": "node dist/server/index.js --port 3000",
+    "start": "node dist/server/index.js",
     "clean": "rm -rf dist && rm -rf web/dist",
     "prepublishOnly": "npm run build",
     "release": "npm publish",

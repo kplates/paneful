@@ -293,6 +293,15 @@ function startServer(devMode: boolean, port: number): void {
   // IPC listener
   const ipcServer = startIpcListener(socketPath(), ptyManager, projectStore, wsHandler);
 
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`Port ${port} is already in use. Paneful may already be running.`);
+      console.error(`Use --port <number> to specify a different port.`);
+      process.exit(1);
+    }
+    throw err;
+  });
+
   server.listen(port, '127.0.0.1', () => {
     const addr = server.address();
     const actualPort = typeof addr === 'object' && addr ? addr.port : port;
@@ -356,7 +365,7 @@ program
       removeLockfile();
     }
 
-    startServer(opts.dev || false, opts.port || 0);
+    startServer(opts.dev || false, opts.port || 56170);
   });
 
 program.parse();
