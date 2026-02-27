@@ -223,43 +223,70 @@ function startServer(devMode: boolean, port: number): void {
       return;
     }
 
-    const script = `
+    // Step 1: Find editor processes dynamically — match known editor keywords
+    const editorPatterns = ['cursor', 'code', 'vscode', 'visual studio code', 'zed', 'windsurf'];
+
+    const findScript = `
       tell application "System Events"
-        set editorNames to {"Cursor", "Code"}
-        repeat with editorName in editorNames
-          if exists process editorName then
-            tell process editorName
-              if exists front window then
-                return name of front window
-              end if
-            end tell
-          end if
+        set procNames to name of every process whose background only is false
+        set output to ""
+        repeat with p in procNames
+          set output to output & p & linefeed
         end repeat
+        return output
       end tell
-      return ""
     `;
 
-    execFile('osascript', ['-e', script], { timeout: 2000 }, (err, stdout, stderr) => {
+    execFile('osascript', ['-e', findScript], { timeout: 2000 }, (err, stdout, stderr) => {
       if (err) {
         const needsAccess = stderr?.includes('not allowed assistive access') || stderr?.includes('1719');
         res.json({ projectName: null, needsAccessibility: needsAccess || undefined });
         return;
       }
-      if (!stdout.trim()) {
+
+      const processes = stdout.trim().split('\n').map((p) => p.trim()).filter(Boolean);
+      console.log('[active-editor] processes:', processes);
+      const editorProcess = processes.find((p) =>
+        editorPatterns.some((pat) => p.toLowerCase().includes(pat))
+      );
+      console.log('[active-editor] matched:', editorProcess ?? 'none');
+
+      if (!editorProcess) {
         res.json({ projectName: null });
         return;
       }
 
-      const title = stdout.trim();
-      // VS Code/Cursor titles: "file — project — Editor" or "project — Editor"
-      const parts = title.split(' \u2014 ');
-      let projectName: string | null = null;
-      if (parts.length >= 3) {
-        projectName = parts[parts.length - 2];
-      } else if (parts.length === 2) {
-        projectName = parts[0];
-      }
-      res.json({ projectName });
+      // Step 2: Get the front window title of the matched editor
+      const titleScript = `
+        tell application "System Events"
+          tell process "${editorProcess.replace(/"/g, '\\"')}"
+            if exists front window then
+              return name of front window
+            end if
+          end tell
+        end tell
+        return ""
+      `;
+
+      execFile('osascript', ['-e', titleScript], { timeout: 2000 }, (err2, stdout2, stderr2) => {
+        console.log('[active-editor] title stdout:', JSON.stringify(stdout2));
+        console.log('[active-editor] title err:', err2?.message ?? 'none');
+        if (err2 || !stdout2.trim()) {
+          res.json({ projectName: null });
+          return;
+        }
+
+        const title = stdout2.trim();
+        // Editor titles: "file — project — Editor" or "project — Editor"
+        const parts = title.split(' \u2014 ');
+        let projectName: string | null = null;
+        if (parts.length >= 3) {
+          projectName = parts[parts.length - 2];
+        } else if (parts.length === 2) {
+          projectName = parts[0];
+        }
+        res.json({ projectName });
+      });
     });
   });
 
