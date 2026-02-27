@@ -216,15 +216,24 @@ function startServer(devMode: boolean, port: number): void {
     res.json({ killed: killed.length });
   });
 
-  // Get the active editor's project folder name (for auto-focus on window switch)
-  app.get('/api/active-editor', (_req, res) => {
-    if (process.platform !== 'darwin') {
-      res.json({ projectName: null });
-      return;
+  app.post('/api/validate-path', (req, res) => {
+    const { path: rawPath } = req.body;
+    if (!rawPath) { res.json({ valid: false }); return; }
+    const resolved = rawPath.replace(/^~/, os.homedir());
+    try {
+      const stat = fs.statSync(resolved);
+      res.json({ valid: stat.isDirectory(), resolved });
+    } catch {
+      res.json({ valid: false });
     }
+  });
 
-    // Step 1: Find editor processes dynamically — match known editor keywords
-    const editorPatterns = ['cursor', 'code', 'vscode', 'visual studio code', 'zed', 'windsurf'];
+  // Active editor detection — polls server-side so the client gets an instant cached response
+  const editorPatterns = ['cursor', 'code', 'vscode', 'visual studio code', 'zed', 'windsurf'];
+  let editorCache: { projectName: string | null; needsAccessibility?: boolean } = { projectName: null };
+
+  function pollActiveEditor() {
+    if (process.platform !== 'darwin') return;
 
     const findScript = `
       tell application "System Events"
@@ -240,7 +249,7 @@ function startServer(devMode: boolean, port: number): void {
     execFile('osascript', ['-e', findScript], { timeout: 2000 }, (err, stdout, stderr) => {
       if (err) {
         const needsAccess = stderr?.includes('not allowed assistive access') || stderr?.includes('1719');
-        res.json({ projectName: null, needsAccessibility: needsAccess || undefined });
+        editorCache = { projectName: null, needsAccessibility: needsAccess || undefined };
         return;
       }
 
@@ -250,11 +259,10 @@ function startServer(devMode: boolean, port: number): void {
       );
 
       if (!editorProcess) {
-        res.json({ projectName: null });
+        editorCache = { projectName: null };
         return;
       }
 
-      // Step 2: Get the front window title of the matched editor
       const titleScript = `
         tell application "System Events"
           tell process "${editorProcess.replace(/"/g, '\\"')}"
@@ -268,7 +276,7 @@ function startServer(devMode: boolean, port: number): void {
 
       execFile('osascript', ['-e', titleScript], { timeout: 2000 }, (err2, stdout2) => {
         if (err2 || !stdout2.trim()) {
-          res.json({ projectName: null });
+          editorCache = { projectName: null };
           return;
         }
 
@@ -278,7 +286,6 @@ function startServer(devMode: boolean, port: number): void {
         // Try to extract a path from the title (e.g. "~/Documents/source/foo - branch")
         const pathMatch = title.match(/^(~?\/[^\s]+)/);
         if (pathMatch) {
-          // Grab the deepest folder from the path
           const segments = pathMatch[1].replace(/\/$/, '').split('/');
           projectName = segments[segments.length - 1] || null;
         }
@@ -293,9 +300,22 @@ function startServer(devMode: boolean, port: number): void {
           }
         }
 
-        res.json({ projectName });
+        const prev = editorCache.projectName;
+        editorCache = { projectName };
+        // Push change to client over WebSocket
+        if (projectName && projectName !== prev) {
+          wsHandler.send({ type: 'editor:active', projectName });
+        }
       });
     });
+  }
+
+  // Poll every 2 seconds server-side
+  pollActiveEditor();
+  setInterval(pollActiveEditor, 2000);
+
+  app.get('/api/active-editor', (_req, res) => {
+    res.json(editorCache);
   });
 
   // Resolve a dropped file's full path using OS file index (Spotlight on macOS)

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, PanelLeftClose, ArrowUpCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Plus, PanelLeftClose, ArrowUpCircle, Lightbulb, MonitorSmartphone } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 import { useLayoutStore } from '../../stores/layoutStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -42,8 +42,13 @@ export function Sidebar() {
   const removeProject = useProjectStore((s) => s.removeProject);
   const addTerminalToProject = useProjectStore((s) => s.addTerminalToProject);
   const sidebarOpen = useUIStore((s) => s.sidebarOpen);
+  const sidebarWidth = useUIStore((s) => s.sidebarWidth);
+  const setSidebarWidth = useUIStore((s) => s.setSidebarWidth);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const connectionStatus = useUIStore((s) => s.connectionStatus);
+  const isResizing = useRef(false);
+  const editorSyncEnabled = useUIStore((s) => s.editorSyncEnabled);
+  const toggleEditorSync = useUIStore((s) => s.toggleEditorSync);
   const favourites = useFavouriteStore((s) => s.favourites);
   const addFavourite = useFavouriteStore((s) => s.addFavourite);
   const updateFavourite = useFavouriteStore((s) => s.updateFavourite);
@@ -141,6 +146,25 @@ export function Sidebar() {
     }
   }, []);
 
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    isResizing.current = true;
+    const onMouseMove = (ev: MouseEvent) => {
+      setSidebarWidth(ev.clientX);
+    };
+    const onMouseUp = () => {
+      isResizing.current = false;
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  }, [setSidebarWidth]);
+
   const handleSidebarDrop = useCallback((e: React.DragEvent) => {
     setIsDragOver(false);
     if (!e.dataTransfer.types.includes('Files') || e.dataTransfer.files.length === 0) return;
@@ -176,11 +200,17 @@ export function Sidebar() {
 
   return (
     <div
-      className={`w-56 flex-shrink-0 bg-[var(--surface-1)] border-r border-[var(--border)] flex flex-col h-full ${isDragOver ? 'ring-2 ring-inset ring-[var(--accent)]' : ''}`}
+      className={`relative flex-shrink-0 bg-[var(--surface-1)] border-r border-[var(--border)] flex flex-col h-full ${isDragOver ? 'ring-2 ring-inset ring-[var(--accent)]' : ''}`}
+      style={{ width: sidebarWidth }}
       onDragOver={handleSidebarDragOver}
       onDragLeave={handleSidebarDragLeave}
       onDrop={handleSidebarDrop}
     >
+      {/* Resize handle */}
+      <div
+        className="absolute top-0 right-0 w-1 h-full cursor-col-resize z-10 hover:bg-[var(--accent)] active:bg-[var(--accent)] opacity-0 hover:opacity-40 active:opacity-60 transition-opacity"
+        onMouseDown={handleResizeStart}
+      />
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
         <div className="flex items-center gap-2">
@@ -198,13 +228,28 @@ export function Sidebar() {
             title={connectionStatus}
           />
         </div>
-        <button
-          onClick={toggleSidebar}
-          className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)] transition-colors"
-          title="Hide sidebar"
-        >
-          <PanelLeftClose size={14} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={toggleEditorSync}
+            className={`p-1 rounded transition-colors ${
+              editorSyncEnabled
+                ? 'text-[var(--accent)] hover:bg-[var(--surface-3)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)]'
+            }`}
+            title={editorSyncEnabled
+              ? 'Editor sync ON — auto-switches project based on your active editor. Click to disable.'
+              : 'Editor sync OFF — click to enable. Requires: (1) Terminal app in System Settings → Accessibility, (2) Editor window title includes folder name (default in VS Code/Cursor).'}
+          >
+            <MonitorSmartphone size={14} />
+          </button>
+          <button
+            onClick={toggleSidebar}
+            className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)] transition-colors"
+            title="Hide sidebar"
+          >
+            <PanelLeftClose size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Project list + Favourites */}
@@ -234,6 +279,11 @@ export function Sidebar() {
             />
           </>
         )}
+      </div>
+
+      <div className="mx-3 mb-2 px-3 py-2.5 rounded-lg bg-[var(--surface-2)] text-[10px] text-[var(--text-muted)] leading-relaxed flex flex-col items-center gap-1.5 text-center">
+        <Lightbulb size={12} className="text-yellow-400" />
+        Drag a folder into this sidebar to create a project
       </div>
 
       {/* Add button */}

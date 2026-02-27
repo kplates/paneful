@@ -138,7 +138,7 @@ export function Toolbar({ onNewPane }: ToolbarProps) {
       <button
         onClick={handleAutoReorganize}
         className="p-1.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)] transition-colors"
-        title="Auto reorganize"
+        title="Auto reorganize (Cmd+R)"
       >
         <LayoutDashboard size={14} />
       </button>

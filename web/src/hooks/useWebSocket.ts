@@ -95,6 +95,20 @@ export function useWebSocket() {
             terminalIds: [],
           });
           setActiveProject(msg.projectId);
+          return;
+        }
+
+        // Handle active editor change (auto-focus project)
+        if (msg.type === 'editor:active') {
+          if (!useUIStore.getState().editorSyncEnabled) return;
+          const { projects, activeProjectId } = useProjectStore.getState();
+          const match = Object.values(projects).find((p) => {
+            const folderName = p.cwd.replace(/\/$/, '').split('/').pop();
+            return p.name === msg.projectName || folderName === msg.projectName;
+          });
+          if (match && match.id !== activeProjectId) {
+            setActiveProject(match.id);
+          }
         }
       } catch {
         // ignore invalid messages

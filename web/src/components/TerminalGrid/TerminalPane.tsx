@@ -42,8 +42,11 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
   }, [terminalId, projectId]);
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
+    // Skip if this is an internal pane drag (reorder)
+    const isInternalDrag = useUIStore.getState().draggingTerminalId != null;
+
     // VS Code/Cursor drops: path in text/plain or codefiles, no Files
-    if (e.dataTransfer.types.includes('codefiles') || e.dataTransfer.types.includes('text/plain')) {
+    if (!isInternalDrag && (e.dataTransfer.types.includes('codefiles') || e.dataTransfer.types.includes('text/plain'))) {
       const codefiles = e.dataTransfer.getData('codefiles');
       let paths: string[] = [];
       if (codefiles) {
@@ -100,6 +103,11 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
   }, [terminalId, dragProps, focus]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
+    // Internal pane drag (reorder) takes priority
+    if (useUIStore.getState().draggingTerminalId != null) {
+      dragProps.onDragOver(e);
+      return;
+    }
     // Allow file drops from OS or editors (VS Code/Cursor)
     if (e.dataTransfer.types.includes('Files') || e.dataTransfer.types.includes('codefiles') || e.dataTransfer.types.includes('text/plain')) {
       e.preventDefault();
