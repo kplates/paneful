@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, PanelLeftClose, ArrowUpCircle, Lightbulb, MonitorSmartphone } from 'lucide-react';
+import { Plus, PanelLeftClose, ArrowUpCircle, Lightbulb, MonitorSmartphone, Sun, Moon, Monitor } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 import { useLayoutStore } from '../../stores/layoutStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -49,6 +49,8 @@ export function Sidebar() {
   const isResizing = useRef(false);
   const editorSyncEnabled = useUIStore((s) => s.editorSyncEnabled);
   const toggleEditorSync = useUIStore((s) => s.toggleEditorSync);
+  const theme = useUIStore((s) => s.theme);
+  const cycleTheme = useUIStore((s) => s.cycleTheme);
   const favourites = useFavouriteStore((s) => s.favourites);
   const addFavourite = useFavouriteStore((s) => s.addFavourite);
   const updateFavourite = useFavouriteStore((s) => s.updateFavourite);
@@ -235,6 +237,13 @@ export function Sidebar() {
           />
         </div>
         <div className="flex items-center gap-1">
+          <button
+            onClick={cycleTheme}
+            className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)] transition-colors"
+            title={`Theme: ${theme}. Click to cycle.`}
+          >
+            {theme === 'light' ? <Sun size={14} /> : theme === 'dark' ? <Moon size={14} /> : <Monitor size={14} />}
+          </button>
           <button
             onClick={toggleEditorSync}
             className={`p-1 rounded transition-colors ${

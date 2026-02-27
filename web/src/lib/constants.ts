@@ -22,7 +22,7 @@ export const SHORTCUTS = {
   FOCUS_9: { key: '9', meta: true },
 } as const;
 
-export const XTERM_THEME = {
+export const XTERM_THEME_DARK = {
   background: '#0a0a0f',
   foreground: '#ececf1',
   cursor: '#ececf1',
@@ -44,5 +44,30 @@ export const XTERM_THEME = {
   brightBlue: '#849dff',
   brightMagenta: '#d19dff',
   brightCyan: '#0ac5b3',
+  brightWhite: '#ffffff',
+};
+
+export const XTERM_THEME_LIGHT = {
+  background: '#ffffff',
+  foreground: '#1a1a2e',
+  cursor: '#1a1a2e',
+  cursorAccent: '#ffffff',
+  selectionBackground: '#5b5bd630',
+  selectionForeground: '#1a1a2e',
+  black: '#1a1a2e',
+  red: '#dc3545',
+  green: '#1a8f5c',
+  yellow: '#b58900',
+  blue: '#5b5bd6',
+  magenta: '#9b3bb0',
+  cyan: '#0f8a7e',
+  white: '#f5f5f7',
+  brightBlack: '#8888a0',
+  brightRed: '#e5484d',
+  brightGreen: '#30a46c',
+  brightYellow: '#d4a017',
+  brightBlue: '#6e6ee6',
+  brightMagenta: '#ab4aba',
+  brightCyan: '#12a594',
   brightWhite: '#ffffff',
 };

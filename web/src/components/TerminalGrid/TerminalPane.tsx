@@ -121,7 +121,7 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
   return (
     <div
       style={{
-        borderColor: isFocused ? 'rgba(107,107,128,0.35)' : 'transparent',
+        borderColor: isFocused ? 'var(--accent)' : 'transparent',
       }}
       className={`
         flex flex-col h-full w-full relative border

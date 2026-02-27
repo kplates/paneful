@@ -4,8 +4,13 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { sendMessage } from './useWebSocket';
 import { useSessionStore } from '../stores/sessionStore';
-import { useUIStore } from '../stores/uiStore';
-import { XTERM_THEME } from '../lib/constants';
+import { useUIStore, getResolvedTheme } from '../stores/uiStore';
+import { XTERM_THEME_DARK, XTERM_THEME_LIGHT } from '../lib/constants';
+
+function getCurrentXtermTheme() {
+  const pref = useUIStore.getState().theme;
+  return getResolvedTheme(pref) === 'light' ? XTERM_THEME_LIGHT : XTERM_THEME_DARK;
+}
 
 // Track which terminals have been spawned on the backend (survives remounts)
 const spawnedTerminals = new Set<string>();
@@ -89,7 +94,7 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
 
     // ── Create new terminal ──
     const term = new Terminal({
-      theme: XTERM_THEME,
+      theme: getCurrentXtermTheme(),
       fontFamily: "'JetBrains Mono', 'Fira Code', 'SF Mono', 'Menlo', monospace",
       fontSize: 13,
       lineHeight: 1.2,
@@ -171,6 +176,35 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
       // Don't dispose or remove — terminal stays alive for reparenting
     };
   }, [terminalId, projectId, cwd, createSession, setTerminalInstance]);
+
+  // Re-theme terminal when theme preference changes or system preference changes
+  useEffect(() => {
+    const applyTheme = () => {
+      const term = terminalRef.current;
+      if (term) {
+        term.options.theme = getCurrentXtermTheme();
+      }
+    };
+
+    let prev = useUIStore.getState().theme;
+    const unsub = useUIStore.subscribe((s) => {
+      if (s.theme !== prev) {
+        prev = s.theme;
+        applyTheme();
+      }
+    });
+
+    const mql = window.matchMedia('(prefers-color-scheme: light)');
+    const onSystemChange = () => {
+      if (useUIStore.getState().theme === 'system') applyTheme();
+    };
+    mql.addEventListener('change', onSystemChange);
+
+    return () => {
+      unsub();
+      mql.removeEventListener('change', onSystemChange);
+    };
+  }, []);
 
   const fit = useCallback(() => {
     const fitAddon = fitAddonRef.current;

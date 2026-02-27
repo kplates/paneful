@@ -34,10 +34,9 @@ export function PaneHeader({ terminalId, projectId, isFocused, onClose, dragProp
       onDragEnd={dragProps.onDragEnd}
       className={`
         flex items-center h-7 px-2 gap-1.5 flex-shrink-0
-        bg-[var(--surface-2)] border-b
-        border-[var(--border)]
-        transition-colors duration-100
+        border-b transition-colors duration-100
         select-none cursor-grab active:cursor-grabbing
+        ${isFocused ? 'bg-[var(--surface-3)] border-[var(--accent)]' : 'bg-[var(--surface-2)] border-[var(--border)]'}
       `}
     >
       {/* Drag handle */}
