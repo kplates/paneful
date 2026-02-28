@@ -1,17 +1,10 @@
 #!/usr/bin/env node
 
 import { program } from 'commander';
-import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import express from 'express';
-import { execFile } from 'node:child_process';
-import { v4 as uuidv4 } from 'uuid';
-import { PtyManager } from './pty-manager.js';
-import { ProjectStore } from './project-store.js';
-import { WsHandler } from './ws-handler.js';
-import { startIpcListener, sendIpcCommand } from './ipc.js';
+import { sendIpcCommand } from './ipc-client.js';
 import { openBrowser, focusBrowser } from './browser.js';
 
 // ── Version check ──
@@ -180,7 +173,29 @@ async function handleKill(name: string): Promise<void> {
 
 // ── Server ──
 
-function startServer(devMode: boolean, port: number): void {
+async function startServer(devMode: boolean, port: number): Promise<void> {
+  // Lazy-load heavy dependencies (express, node-pty, ws, etc.)
+  // so CLI commands that don't need the server start instantly
+  const [
+    { default: http },
+    { default: express },
+    { execFile },
+    { v4: uuidv4 },
+    { PtyManager },
+    { ProjectStore },
+    { WsHandler },
+    { startIpcListener },
+  ] = await Promise.all([
+    import('node:http'),
+    import('express'),
+    import('node:child_process'),
+    import('uuid'),
+    import('./pty-manager.js'),
+    import('./project-store.js'),
+    import('./ws-handler.js'),
+    import('./ipc.js'),
+  ]);
+
   const app = express();
   app.use(express.json());
 
@@ -394,9 +409,7 @@ function startServer(devMode: boolean, port: number): void {
     console.log(`Paneful running on http://localhost:${actualPort}`);
 
     if (!devMode) {
-      if (!focusBrowser(actualPort)) {
-        openBrowser(actualPort);
-      }
+      openBrowser(actualPort);
     }
   });
 
@@ -422,9 +435,16 @@ program
   .option('--spawn', 'Spawn a new project in the current directory')
   .option('--list', 'List all projects')
   .option('--kill <name>', 'Kill a project by name')
+  .option('--install-app', 'Create Paneful.app in /Applications (macOS only)')
   .option('--dev', 'Run in development mode (proxy to Vite dev server)')
   .option('--port <number>', 'Port to listen on (default: random available)', parseInt)
   .action(async (opts) => {
+    if (opts.installApp) {
+      const { installApp } = await import('./install-app.js');
+      await installApp();
+      return;
+    }
+
     if (opts.list) {
       await handleList();
       return;
@@ -453,7 +473,7 @@ program
       removeLockfile();
     }
 
-    startServer(opts.dev || false, opts.port || 56170);
+    await startServer(opts.dev || false, opts.port || 56170);
   });
 
 program.parse();
