@@ -1,6 +1,6 @@
 # Paneful
 
-A browser-based terminal multiplexer. Tmux-style pane management, project workspaces, and a CLI that spawns into a running instance.
+A terminal multiplexer that runs in your browser. Split panes, organize by project, drag and drop from Finder, sync with your editor — all from a single `npm install`.
 
 ## Install
 
@@ -8,33 +8,14 @@ A browser-based terminal multiplexer. Tmux-style pane management, project worksp
 npm i -g paneful
 ```
 
-Or run without installing:
-
-```bash
-npx paneful
-```
-
 ## Usage
 
-### Start the server
-
 ```bash
-paneful              # Start server and open browser
-paneful --port 8080  # Use a specific port
-```
-
-### Spawn projects from anywhere
-
-```bash
-cd ~/my-project
-paneful --spawn      # Adds project to running instance
-```
-
-### Manage projects
-
-```bash
-paneful --list              # List all projects
-paneful --kill my-project   # Kill a project by name
+paneful                        # Start server and open browser
+paneful --port 8080            # Use a specific port
+paneful --spawn                # Add current directory as a project
+paneful --list                 # List all projects
+paneful --kill my-project      # Kill a project by name
 ```
 
 ## Features
