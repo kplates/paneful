@@ -244,7 +244,7 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
   });
 
   // Active editor detection — single AppleScript gets frontmost app + window title
-  const editorPatterns = ['cursor', 'code', 'vscode', 'visual studio code', 'zed', 'windsurf'];
+  const editorPatterns = ['cursor', 'code', 'vscode', 'visual studio code', 'zed', 'windsurf', 'electron'];
   let editorCache: { projectName: string | null; needsAccessibility?: boolean } = { projectName: null };
 
   const editorScript = `
