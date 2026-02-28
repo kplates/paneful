@@ -2,6 +2,8 @@
 
 A terminal multiplexer that runs in your browser. Split panes, organize by project, drag and drop from Finder, sync with your editor — all from a single `npm install`.
 
+![Paneful](screenshot.png)
+
 ## Install
 
 ```bash
