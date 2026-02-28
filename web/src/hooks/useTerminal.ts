@@ -80,6 +80,7 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
       requestAnimationFrame(() => {
         try {
           fitAddon.fit();
+          term.scrollToBottom();
           const { cols, rows } = term;
           lastSizeRef.current = { cols, rows };
           sendMessage({ type: 'pty:resize', terminalId, cols, rows });
@@ -213,6 +214,7 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
 
     try {
       fitAddon.fit();
+      term.scrollToBottom();
       const { cols, rows } = term;
       const last = lastSizeRef.current;
       if (!last || last.cols !== cols || last.rows !== rows) {
