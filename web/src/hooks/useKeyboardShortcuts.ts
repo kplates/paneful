@@ -61,6 +61,21 @@ export function useKeyboardShortcuts() {
       const meta = isMac ? e.metaKey : e.ctrlKey;
       if (!meta) return;
 
+      // Cmd+=/-/0: zoom (for native app where browser zoom isn't available)
+      if ((key === '=' || key === '+' || key === '-' || key === '0') && !e.shiftKey) {
+        const current = parseFloat(document.documentElement.style.zoom || '1');
+        if (key === '=' || key === '+') {
+          document.documentElement.style.zoom = String(Math.min(current + 0.1, 2));
+        } else if (key === '-') {
+          document.documentElement.style.zoom = String(Math.max(current - 0.1, 0.5));
+        } else {
+          document.documentElement.style.zoom = '1';
+        }
+        // Trigger resize so xterm.js terminals refit
+        window.dispatchEvent(new Event('resize'));
+        return;
+      }
+
       // Immediately block browser defaults for our shortcuts
       // This must happen BEFORE any early returns, otherwise the browser
       // will open a new window (Cmd+N), close the tab (Cmd+W), etc.
