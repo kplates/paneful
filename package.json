@@ -7,7 +7,8 @@
     "paneful": "./dist/server/index.js"
   },
   "files": [
-    "dist/"
+    "dist/",
+    "assets/"
   ],
   "scripts": {
     "build": "npm run clean && npm run build:web && npm run build:server",
