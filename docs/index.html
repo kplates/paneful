@@ -336,7 +336,7 @@
       }
       .editor-sync-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 2fr 3fr;
         gap: 20px;
       }
       .es-card {
@@ -344,6 +344,8 @@
         border: 1px solid var(--border);
         border-radius: 12px;
         padding: 28px;
+        min-width: 0;
+        overflow: hidden;
       }
       .es-card h3 {
         font-size: 17px;
@@ -477,6 +479,22 @@
       @media (max-width: 700px) {
         .editor-sync-grid {
           grid-template-columns: 1fr;
+        }
+        .es-card {
+          padding: 20px;
+        }
+        .settings-path {
+          display: flex;
+          flex-wrap: wrap;
+        }
+        .es-card .code-block {
+          overflow-x: auto;
+        }
+        .es-card .code-block code {
+          font-size: 12px;
+        }
+        .setup-steps li {
+          padding-left: 34px;
         }
       }
 
@@ -818,23 +836,15 @@
               </div>
               <div class="sync-step">
                 <strong>Paneful detects the change</strong>
-                <p>
-                  Reads the frontmost app and window title via the macOS
-                  Accessibility API
-                </p>
+                <p>Reads the frontmost app and window title via the macOS Accessibility API</p>
               </div>
               <div class="sync-step">
                 <strong>Matches to a project</strong>
-                <p>
-                  Compares the folder name in the title against your Paneful
-                  projects
-                </p>
+                <p>Compares the folder name in the title against your Paneful projects</p>
               </div>
               <div class="sync-step">
                 <strong>Terminals switch instantly</strong>
-                <p>
-                  Sidebar, layout, and all panes switch to <code>my-api</code>
-                </p>
+                <p>Sidebar, layout, and all panes switch to <code>my-api</code></p>
               </div>
             </div>
           </div>
@@ -860,15 +870,7 @@
                   customised your title bar, make sure
                   <code>${rootName}</code> is present:
                 </p>
-                <div class="code-block">
-                  <code
-                    >"window.title":
-                    "${dirty}${activeEditorShort}${separator}<span
-                      class="highlight"
-                      >${rootName}</span
-                    >"</code
-                  >
-                </div>
+                <div class="code-block"><code>"window.title": "${dirty}${activeEditorShort}${separator}<span class="highlight">${rootName}</span>"</code></div>
               </li>
               <li>
                 <strong>Toggle on in sidebar</strong>
@@ -901,36 +903,21 @@
             <p class="desc">
               Install the CLI globally — this is required for everything else.
             </p>
-            <div class="code-block">
-              <code
-                ><span class="prompt">$ </span
-                ><span class="cmd">npm i -g paneful</span></code
-              >
-            </div>
+            <div class="code-block"><code><span class="prompt">$ </span><span class="cmd">npm i -g paneful</span></code></div>
           </div>
           <div class="install-card">
             <h3>2. Run</h3>
             <p class="desc">
               Start the server and open Paneful in your browser.
             </p>
-            <div class="code-block">
-              <code
-                ><span class="prompt">$ </span
-                ><span class="cmd">paneful</span></code
-              >
-            </div>
+            <div class="code-block"><code><span class="prompt">$ </span><span class="cmd">paneful</span></code></div>
           </div>
           <div class="install-card">
             <h3>3. Optional: macOS app</h3>
             <p class="desc">
               Get a native Dock icon and WebKit window — no browser tab needed.
             </p>
-            <div class="code-block">
-              <code
-                ><span class="prompt">$ </span
-                ><span class="cmd">paneful --install-app</span></code
-              >
-            </div>
+            <div class="code-block"><code><span class="prompt">$ </span><span class="cmd">paneful --install-app</span></code></div>
           </div>
         </div>
       </div>
@@ -944,30 +931,13 @@
         <p class="section-subtitle">
           Everything runs from the <code>paneful</code> command.
         </p>
-        <div class="code-block">
-          <code
-            ><span class="prompt">$ </span><span class="cmd">paneful</span>
-            <span class="comment"># Start server and open browser</span>
-            <span class="prompt">$ </span
-            ><span class="cmd">paneful --spawn</span>
-            <span class="comment"># Add current directory as a project</span>
-            <span class="prompt">$ </span
-            ><span class="cmd">paneful --port 8080</span>
-            <span class="comment"># Use a specific port</span>
-            <span class="prompt">$ </span
-            ><span class="cmd">paneful --list</span>
-            <span class="comment"># List all projects</span>
-            <span class="prompt">$ </span
-            ><span class="cmd">paneful --kill my-project</span>
-            <span class="comment"># Kill a project by name</span>
-            <span class="prompt">$ </span
-            ><span class="cmd">paneful --install-app</span>
-            <span class="comment"># Install as a native macOS app</span>
-            <span class="prompt">$ </span
-            ><span class="cmd">paneful update</span>
-            <span class="comment"># Update to the latest version</span></code
-          >
-        </div>
+        <div class="code-block"><code><span class="prompt">$ </span><span class="cmd">paneful</span>                        <span class="comment"># Start server and open browser</span>
+<span class="prompt">$ </span><span class="cmd">paneful --spawn</span>                <span class="comment"># Add current directory as a project</span>
+<span class="prompt">$ </span><span class="cmd">paneful --port 8080</span>            <span class="comment"># Use a specific port</span>
+<span class="prompt">$ </span><span class="cmd">paneful --list</span>                 <span class="comment"># List all projects</span>
+<span class="prompt">$ </span><span class="cmd">paneful --kill my-project</span>      <span class="comment"># Kill a project by name</span>
+<span class="prompt">$ </span><span class="cmd">paneful --install-app</span>          <span class="comment"># Install as a native macOS app</span>
+<span class="prompt">$ </span><span class="cmd">paneful update</span>                 <span class="comment"># Update to the latest version</span></code></div>
       </div>
     </section>
 
@@ -976,12 +946,7 @@
       <div class="container">
         <p class="section-label">Updating</p>
         <h2 class="section-title">Stay current</h2>
-        <div class="code-block">
-          <code
-            ><span class="prompt">$ </span
-            ><span class="cmd">paneful update</span></code
-          >
-        </div>
+        <div class="code-block"><code><span class="prompt">$ </span><span class="cmd">paneful update</span></code></div>
         <p class="desc">
           Checks npm for the latest version, installs it globally, and rebuilds
           the native <code>.app</code> if one exists. The Dock icon stays valid
