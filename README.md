@@ -62,8 +62,9 @@ Paneful checks for newer versions on npm and shows a notification in the sidebar
 | `Cmd+Shift+N`     | New pane (horizontal split)     |
 | `Cmd+W`           | Close focused pane              |
 | `Cmd+1-9`         | Focus pane by index             |
-| `Cmd+Arrow`       | Move focus to adjacent pane     |
-| `Cmd+Shift+Arrow` | Swap focused pane with adjacent |
+| `Cmd+Arrow`       | Line start / end in terminal    |
+| `Ctrl+Shift+Arrow`| Move focus to adjacent pane     |
+| `Shift+Arrow`     | Swap focused pane with adjacent |
 | `Cmd+D`           | Toggle sidebar                  |
 | `Cmd+T`           | Cycle through layout presets    |
 | `Cmd+R`           | Auto reorganize panes           |

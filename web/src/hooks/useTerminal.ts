@@ -134,6 +134,22 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
         }
         return false;
       }
+      // Cmd+Left/Right → line start/end (Ctrl+A / Ctrl+E)
+      if (e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey && e.type === 'keydown') {
+        if (e.key === 'ArrowLeft') {
+          sendMessage({ type: 'pty:input', terminalId, data: '\x01' });
+          return false;
+        }
+        if (e.key === 'ArrowRight') {
+          sendMessage({ type: 'pty:input', terminalId, data: '\x05' });
+          return false;
+        }
+      }
+      // Let Shift+Arrow and Ctrl+Shift+Arrow pass through to our shortcut handler
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) &&
+          e.shiftKey && !e.metaKey && !e.altKey) {
+        return false;
+      }
       return true;
     });
 

@@ -21,8 +21,27 @@ export function useKeyboardShortcuts() {
     const handler = (e: KeyboardEvent) => {
       const key = e.key.toLowerCase();
 
-      // Option+Arrow: swap focused pane with adjacent
-      if (e.altKey && !e.metaKey && !e.ctrlKey && ['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key)) {
+      // Ctrl+Shift+Arrow: move focus to adjacent pane
+      if (e.ctrlKey && e.shiftKey && !e.metaKey && !e.altKey && ['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key)) {
+        e.preventDefault();
+        e.stopPropagation();
+        const activeProjectId = useProjectStore.getState().activeProjectId;
+        if (!activeProjectId) return;
+        const layout = useLayoutStore.getState().getLayout(activeProjectId);
+        const focusedId = useUIStore.getState().focusedTerminalId;
+        if (!focusedId || !layout) return;
+        const dir = key === 'arrowleft' ? 'left' : key === 'arrowright' ? 'right' : key === 'arrowup' ? 'up' : 'down';
+        const adjacent = getAdjacentTerminal(layout, focusedId, dir as 'left' | 'right' | 'up' | 'down');
+        if (adjacent) {
+          setFocusedTerminal(adjacent);
+          const session = useSessionStore.getState().sessions[adjacent];
+          session?.terminal?.focus();
+        }
+        return;
+      }
+
+      // Shift+Arrow: swap focused pane with adjacent
+      if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && ['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key)) {
         e.preventDefault();
         e.stopPropagation();
         const activeProjectId = useProjectStore.getState().activeProjectId;
@@ -45,8 +64,7 @@ export function useKeyboardShortcuts() {
       // Immediately block browser defaults for our shortcuts
       // This must happen BEFORE any early returns, otherwise the browser
       // will open a new window (Cmd+N), close the tab (Cmd+W), etc.
-      if (HIJACKED_KEYS.has(key) || (key >= '1' && key <= '9') ||
-          ['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key)) {
+      if (HIJACKED_KEYS.has(key) || (key >= '1' && key <= '9')) {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -119,30 +137,6 @@ export function useKeyboardShortcuts() {
         else preset = 'grid';
         const newLayout = applyPreset(ids, preset);
         if (newLayout) useLayoutStore.getState().setLayout(activeProjectId, newLayout);
-        return;
-      }
-
-      // Cmd+Arrow: move focus
-      if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key) && !e.shiftKey) {
-        if (!focusedId || !layout) return;
-        const dir = key === 'arrowleft' ? 'left' : key === 'arrowright' ? 'right' : key === 'arrowup' ? 'up' : 'down';
-        const adjacent = getAdjacentTerminal(layout, focusedId, dir as 'left' | 'right' | 'up' | 'down');
-        if (adjacent) {
-          setFocusedTerminal(adjacent);
-          const session = useSessionStore.getState().sessions[adjacent];
-          session?.terminal?.focus();
-        }
-        return;
-      }
-
-      // Cmd+Shift+Arrow: swap with adjacent
-      if (['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key) && e.shiftKey) {
-        if (!focusedId || !layout) return;
-        const dir = key === 'arrowleft' ? 'left' : key === 'arrowright' ? 'right' : key === 'arrowup' ? 'up' : 'down';
-        const adjacent = getAdjacentTerminal(layout, focusedId, dir as 'left' | 'right' | 'up' | 'down');
-        if (adjacent) {
-          useLayoutStore.getState().swapPanesInProject(activeProjectId, focusedId, adjacent);
-        }
         return;
       }
 
