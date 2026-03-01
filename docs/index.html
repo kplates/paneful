@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paneful — Browser-based Terminal Multiplexer</title>
+  <meta name="description" content="A terminal multiplexer that runs in your browser. Split panes, organize by project, drag and drop from Finder, sync with your editor — all from a single npm install.">
+  <meta property="og:title" content="Paneful — Browser-based Terminal Multiplexer">
+  <meta property="og:description" content="Split panes, organize by project, drag and drop from Finder, sync with your editor — all from a single npm install.">
+  <meta property="og:image" content="screenshot.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" href="icon-512.png">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface-1: #111118;
+      --surface-2: #1a1a24;
+      --surface-3: #252532;
+      --border: #2a2a3a;
+      --accent: #5b5bd6;
+      --accent-dim: #3a3a8c;
+      --text: #ececf1;
+      --text-secondary: #a1a1b5;
+      --text-muted: #6b6b80;
+      --success: #30a46c;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+
+    code, .mono {
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+    }
+
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ---- Nav ---- */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(10, 10, 15, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 18px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-brand img {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+    }
+    .nav-links {
+      display: flex;
+      gap: 28px;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--text-secondary);
+      font-size: 14px;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    /* ---- Hero ---- */
+    .hero {
+      padding: 140px 0 80px;
+      text-align: center;
+    }
+    .hero-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+    }
+    .hero h1 {
+      font-size: clamp(36px, 5vw, 56px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 16px;
+    }
+    .hero h1 .accent {
+      background: linear-gradient(135deg, var(--accent), #8b8bf0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero .tagline {
+      font-size: clamp(16px, 2.5vw, 20px);
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto 40px;
+    }
+    .tagline-highlight {
+      color: var(--text);
+      font-weight: 600;
+      background: linear-gradient(90deg, var(--accent), #8b8bf0, var(--accent));
+      background-size: 200% 100%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 3s ease-in-out infinite;
+    }
+    @keyframes shimmer {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+    .hero-ctas {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 56px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn:hover {
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 24px rgba(91, 91, 214, 0.3);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 32px rgba(91, 91, 214, 0.5);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: var(--surface-3);
+      color: var(--text);
+    }
+    .screenshot-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+    }
+    .screenshot-wrap img {
+      width: 100%;
+      display: block;
+    }
+
+    /* ---- Sections ---- */
+    section {
+      padding: 80px 0;
+    }
+    .section-label {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+    .section-subtitle {
+      font-size: 17px;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin-bottom: 48px;
+    }
+
+    /* ---- Features ---- */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-card:hover {
+      border-color: var(--accent-dim);
+      transform: translateY(-2px);
+    }
+    .feature-icon {
+      font-size: 28px;
+      margin-bottom: 16px;
+      display: block;
+      width: 48px;
+      height: 48px;
+      line-height: 48px;
+      text-align: center;
+      background: var(--surface-2);
+      border-radius: 10px;
+    }
+    .feature-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ---- Editor Sync ---- */
+    .editor-badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+    .editor-badge {
+      display: inline-block;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .editor-sync-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .es-card {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+    }
+    .es-card h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+    .setup-steps {
+      list-style: none;
+      counter-reset: steps;
+    }
+    .setup-steps li {
+      counter-increment: steps;
+      position: relative;
+      padding-left: 40px;
+      margin-bottom: 24px;
+    }
+    .setup-steps li:last-child {
+      margin-bottom: 0;
+    }
+    .setup-steps li::before {
+      content: counter(steps);
+      position: absolute;
+      left: 0;
+      top: 1px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .setup-steps li strong {
+      display: block;
+      font-size: 15px;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+    .setup-steps li p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin: 0;
+    }
+    .sync-flow {
+      position: relative;
+      padding-left: 24px;
+    }
+    .sync-flow::before {
+      content: '';
+      position: absolute;
+      left: 5px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--accent), var(--accent-dim));
+      border-radius: 1px;
+    }
+    .sync-step {
+      position: relative;
+      padding-bottom: 28px;
+    }
+    .sync-step:last-child {
+      padding-bottom: 0;
+    }
+    .sync-step::before {
+      content: '';
+      position: absolute;
+      left: -24px;
+      top: 7px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--surface-1);
+      box-sizing: border-box;
+    }
+    .sync-step strong {
+      display: block;
+      font-size: 15px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .sync-step p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin: 0;
+    }
+    .es-note {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 24px;
+    }
+    .settings-path {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 13px;
+      margin: 6px 0;
+    }
+    .settings-path span {
+      color: var(--text);
+      font-weight: 500;
+    }
+    .settings-path .sep {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+    .app-name {
+      display: inline-block;
+      background: var(--accent-dim);
+      color: var(--text);
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    @media (max-width: 700px) {
+      .editor-sync-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ---- Install ---- */
+    .install-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .install-card {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+    }
+    .install-card h3 {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .install-card .desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+    .code-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      overflow-x: auto;
+    }
+    .code-block code {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.8;
+      white-space: pre;
+    }
+    .code-block .prompt {
+      color: var(--text-muted);
+      user-select: none;
+    }
+    .code-block .cmd {
+      color: var(--success);
+    }
+    .code-block .comment {
+      color: var(--text-muted);
+    }
+
+    /* ---- Update ---- */
+    .update-section {
+      text-align: center;
+    }
+    .update-section .code-block {
+      max-width: 480px;
+      margin: 0 auto 20px;
+      text-align: left;
+    }
+    .update-section .desc {
+      font-size: 15px;
+      color: var(--text-secondary);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* ---- Shortcuts ---- */
+    .shortcuts-table-wrap {
+      overflow-x: auto;
+    }
+    .shortcuts-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .shortcuts-table th,
+    .shortcuts-table td {
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .shortcuts-table th {
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .shortcuts-table td:first-child {
+      white-space: nowrap;
+    }
+    .shortcuts-table td:last-child {
+      color: var(--text-secondary);
+    }
+    kbd {
+      display: inline-block;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 2px 8px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    /* ---- Footer ---- */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 0;
+    }
+    footer .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .footer-brand {
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text-muted);
+    }
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      list-style: none;
+    }
+    .footer-links a {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .footer-links a:hover {
+      color: var(--text);
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 700px) {
+      .hero { padding: 120px 0 48px; }
+      section { padding: 56px 0; }
+      .install-grid { grid-template-columns: 1fr !important; }
+      .features-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="container">
+    <a href="#" class="nav-brand">
+      <img src="icon-512.png" alt="Paneful icon">
+      Paneful
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#editor-sync">Editor Sync</a></li>
+      <li><a href="#install">Install</a></li>
+      <li><a href="#usage">Usage</a></li>
+      <li><a href="#shortcuts">Shortcuts</a></li>
+      <li><a href="https://github.com/kplates/paneful">GitHub</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <img src="icon-512.png" alt="Paneful" class="hero-icon">
+    <h1>Terminal multiplexer,<br><span class="accent">in your browser</span></h1>
+    <p class="tagline">Split panes, organize by project, drag &amp; drop from Finder, <span class="tagline-highlight">sync with your editor</span> — all from a single <code>npm install</code>.</p>
+    <div class="hero-ctas">
+      <a href="#install" class="btn btn-primary">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v8m-3-3l3 3 3-3M3 13h10"/></svg>
+        Install via CLI
+      </a>
+      <a href="#install" class="btn btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="3" width="12" height="9" rx="1"/><path d="M5 14h6"/></svg>
+        macOS App
+      </a>
+    </div>
+    <div class="screenshot-wrap">
+      <img src="screenshot.png" alt="Paneful — split pane terminal in the browser">
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features">
+  <div class="container">
+    <p class="section-label">Features</p>
+    <h2 class="section-title">Everything you need from a terminal</h2>
+    <p class="section-subtitle">All the power of a dedicated multiplexer with the convenience of a web app.</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">&#9638;</span>
+        <h3>Split Pane Layouts</h3>
+        <p>Five layout presets: columns, rows, main + stack, main + row, and grid. Cycle through them with <kbd>Cmd+T</kbd> or auto-reorganize with <kbd>Cmd+R</kbd>.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#128193;</span>
+        <h3>Project Sidebar</h3>
+        <p>Organize terminals by project. Each project gets its own layout, panes, and working directory. Switch instantly from the sidebar.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#10149;</span>
+        <h3>Drag &amp; Drop</h3>
+        <p>Drag folders from Finder into the sidebar to create projects. Drag files into terminal panes to paste their paths as shell-escaped arguments.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#128279;</span>
+        <h3>Editor Sync</h3>
+        <p>Automatically switches the active project when you focus a different editor window. Click into VS Code, and your terminals follow. <a href="#editor-sync">Learn how to set it up &darr;</a></p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#11088;</span>
+        <h3>Favourites</h3>
+        <p>Save workspace layouts as favourites — name, preset, and per-pane commands. Restore any setup with a single click.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#9000;</span>
+        <h3>Native macOS App</h3>
+        <p>Install as a standalone app with its own Dock icon and WebKit window. No browser tab needed. Updates automatically.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#9000;</span>
+        <h3>Keyboard Shortcuts</h3>
+        <p>Full keyboard control: split, close, focus by index, move focus, swap panes, toggle sidebar, and cycle layouts — all without touching the mouse.</p>
+      </div>
+      <div class="feature-card">
+        <span class="feature-icon">&#8644;</span>
+        <h3>Auto-Reorganize</h3>
+        <p>Press <kbd>Cmd+R</kbd> to let Paneful pick the best layout for your current pane count. Smart defaults, zero effort.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Editor Sync -->
+<section id="editor-sync">
+  <div class="container">
+    <p class="section-label">Editor Sync</p>
+    <h2 class="section-title">Your terminals follow your editor</h2>
+    <p class="section-subtitle">Focus a VS Code window and Paneful instantly switches to that project's terminals. Zero clicking, zero context-switching.</p>
+    <div class="editor-badges">
+      <span class="editor-badge">VS Code</span>
+      <span class="editor-badge">Cursor</span>
+      <span class="editor-badge">Zed</span>
+      <span class="editor-badge">Windsurf</span>
+    </div>
+    <div class="editor-sync-grid">
+      <div class="es-card">
+        <h3>How it works</h3>
+        <div class="sync-flow">
+          <div class="sync-step">
+            <strong>You focus an editor window</strong>
+            <p>Switch to your VS Code window for <code>my-api</code></p>
+          </div>
+          <div class="sync-step">
+            <strong>Paneful detects the change</strong>
+            <p>Reads the frontmost app and window title via the macOS Accessibility API</p>
+          </div>
+          <div class="sync-step">
+            <strong>Matches to a project</strong>
+            <p>Compares the folder name in the title against your Paneful projects</p>
+          </div>
+          <div class="sync-step">
+            <strong>Terminals switch instantly</strong>
+            <p>Sidebar, layout, and all panes switch to <code>my-api</code></p>
+          </div>
+        </div>
+      </div>
+      <div class="es-card">
+        <h3>Setup</h3>
+        <ol class="setup-steps">
+          <li>
+            <strong>Grant Accessibility permission</strong>
+            <p>Add <span class="app-name">Paneful</span> (native app) or <span class="app-name">Terminal</span> (CLI) in:</p>
+            <div class="settings-path"><span>System Settings</span> <span class="sep">&rsaquo;</span> <span>Privacy &amp; Security</span> <span class="sep">&rsaquo;</span> <span>Accessibility</span></div>
+          </li>
+          <li>
+            <strong>Editor window title includes folder name</strong>
+            <p>This is the default in VS Code and Cursor. No changes needed for most editors.</p>
+          </li>
+          <li>
+            <strong>Toggle on in sidebar</strong>
+            <p>Click the monitor icon in the sidebar header. Enabled by default.</p>
+          </li>
+        </ol>
+        <p class="es-note">&#128161; After updating Paneful, you may need to remove and re-add it in Accessibility settings.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Install -->
+<section id="install">
+  <div class="container">
+    <p class="section-label">Get Started</p>
+    <h2 class="section-title">Install in seconds</h2>
+    <p class="section-subtitle">One command to install. One command to run.</p>
+    <div class="install-grid">
+      <div class="install-card">
+        <h3>1. Install from npm</h3>
+        <p class="desc">Install the CLI globally — this is required for everything else.</p>
+        <div class="code-block"><code><span class="prompt">$ </span><span class="cmd">npm i -g paneful</span></code></div>
+      </div>
+      <div class="install-card">
+        <h3>2. Run</h3>
+        <p class="desc">Start the server and open Paneful in your browser.</p>
+        <div class="code-block"><code><span class="prompt">$ </span><span class="cmd">paneful</span></code></div>
+      </div>
+      <div class="install-card">
+        <h3>3. Optional: macOS app</h3>
+        <p class="desc">Get a native Dock icon and WebKit window — no browser tab needed.</p>
+        <div class="code-block"><code><span class="prompt">$ </span><span class="cmd">paneful --install-app</span></code></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Usage -->
+<section id="usage">
+  <div class="container">
+    <p class="section-label">Usage</p>
+    <h2 class="section-title">CLI commands</h2>
+    <p class="section-subtitle">Everything runs from the <code>paneful</code> command.</p>
+    <div class="code-block"><code><span class="prompt">$ </span><span class="cmd">paneful</span>                        <span class="comment"># Start server and open browser</span>
+<span class="prompt">$ </span><span class="cmd">paneful --spawn</span>                <span class="comment"># Add current directory as a project</span>
+<span class="prompt">$ </span><span class="cmd">paneful --port 8080</span>            <span class="comment"># Use a specific port</span>
+<span class="prompt">$ </span><span class="cmd">paneful --list</span>                 <span class="comment"># List all projects</span>
+<span class="prompt">$ </span><span class="cmd">paneful --kill my-project</span>      <span class="comment"># Kill a project by name</span>
+<span class="prompt">$ </span><span class="cmd">paneful --install-app</span>          <span class="comment"># Install as a native macOS app</span>
+<span class="prompt">$ </span><span class="cmd">paneful update</span>                 <span class="comment"># Update to the latest version</span></code></div>
+  </div>
+</section>
+
+<!-- Updating -->
+<section id="updating" class="update-section">
+  <div class="container">
+    <p class="section-label">Updating</p>
+    <h2 class="section-title">Stay current</h2>
+    <div class="code-block">
+      <code><span class="prompt">$ </span><span class="cmd">paneful update</span></code>
+    </div>
+    <p class="desc">Checks npm for the latest version, installs it globally, and rebuilds the native <code>.app</code> if one exists. The Dock icon stays valid automatically.</p>
+  </div>
+</section>
+
+<!-- Keyboard Shortcuts -->
+<section id="shortcuts">
+  <div class="container">
+    <p class="section-label">Keyboard Shortcuts</p>
+    <h2 class="section-title">Full keyboard control</h2>
+    <p class="section-subtitle">Never take your hands off the keyboard.</p>
+    <div class="shortcuts-table-wrap">
+      <table class="shortcuts-table">
+        <thead>
+          <tr>
+            <th>Shortcut</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><kbd>Cmd+N</kbd></td><td>New pane (vertical split)</td></tr>
+          <tr><td><kbd>Cmd+Shift+N</kbd></td><td>New pane (horizontal split)</td></tr>
+          <tr><td><kbd>Cmd+W</kbd></td><td>Close focused pane</td></tr>
+          <tr><td><kbd>Cmd+1-9</kbd></td><td>Focus pane by index</td></tr>
+          <tr><td><kbd>Cmd+Arrow</kbd></td><td>Line start / end in terminal</td></tr>
+          <tr><td><kbd>Ctrl+Shift+Arrow</kbd></td><td>Move focus to adjacent pane</td></tr>
+          <tr><td><kbd>Shift+Arrow</kbd></td><td>Swap focused pane with adjacent</td></tr>
+          <tr><td><kbd>Cmd+D</kbd></td><td>Toggle sidebar</td></tr>
+          <tr><td><kbd>Cmd+T</kbd></td><td>Cycle through layout presets</td></tr>
+          <tr><td><kbd>Cmd+R</kbd></td><td>Auto reorganize panes</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <span class="footer-brand">Paneful</span>
+    <ul class="footer-links">
+      <li><a href="https://github.com/kplates/paneful">GitHub</a></li>
+      <li><a href="https://www.npmjs.com/package/paneful">npm</a></li>
+    </ul>
+  </div>
+</footer>
+
+</body>
+</html>
