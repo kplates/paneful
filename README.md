@@ -2,7 +2,7 @@
 
 A terminal multiplexer that runs in your browser. Split panes, organize by project, drag and drop from Finder, sync with your editor — all from a single `npm install`.
 
-**Website:** [kplates.github.io/paneful](https://kplates.github.io/paneful/)
+**Website:** [paneful.dev](https://paneful.dev)
 
 ![Paneful](screenshot.png)
 
