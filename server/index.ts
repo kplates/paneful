@@ -317,6 +317,8 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
           projectName = parts[parts.length - 2];
         } else if (parts.length === 2) {
           projectName = parts[0];
+        } else {
+          projectName = title;
         }
       }
 
