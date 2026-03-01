@@ -473,6 +473,13 @@
     .code-block .comment {
       color: var(--text-muted);
     }
+    .code-block .highlight {
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: underline;
+      text-decoration-color: var(--accent-dim);
+      text-underline-offset: 3px;
+    }
 
     /* ---- Update ---- */
     .update-section {
@@ -707,7 +714,8 @@
           </li>
           <li>
             <strong>Editor window title includes folder name</strong>
-            <p>This is the default in VS Code and Cursor. No changes needed for most editors.</p>
+            <p>This is the default in VS Code and Cursor. If you've customised your title bar, make sure <code>${rootName}</code> is present:</p>
+            <div class="code-block"><code>"window.title": "${dirty}${activeEditorShort}${separator}<span class="highlight">${rootName}</span>"</code></div>
           </li>
           <li>
             <strong>Toggle on in sidebar</strong>
