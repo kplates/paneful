@@ -1,13 +1,14 @@
 {
   "name": "paneful",
-  "version": "0.7.3",
+  "version": "0.8.0",
   "description": "Browser-based terminal multiplexer with tmux-style pane management",
   "type": "module",
   "bin": {
     "paneful": "./dist/server/index.js"
   },
   "files": [
-    "dist/"
+    "dist/",
+    "assets/"
   ],
   "scripts": {
     "build": "npm run clean && npm run build:web && npm run build:server",

@@ -30,7 +30,7 @@ export class PtyManager {
     env.LANG = 'en_US.UTF-8';
     env.LC_ALL = 'en_US.UTF-8';
 
-    const proc = pty.spawn(shell, [], {
+    const proc = pty.spawn(shell, ['--login'], {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,

@@ -1,10 +1,11 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useEditorFocus } from './hooks/useEditorFocus';
 import { useProjectStore } from './stores/projectStore';
 import { useLayoutStore } from './stores/layoutStore';
 import { useUIStore } from './stores/uiStore';
+import { useFavouriteStore } from './stores/favouriteStore';
 import { getTerminalIds } from './lib/layout-engine';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { Toolbar } from './components/Toolbar/Toolbar';
@@ -16,6 +17,12 @@ export function App() {
   useWebSocket();
   useKeyboardShortcuts();
   useEditorFocus();
+
+  useEffect(() => {
+    useProjectStore.getState().hydrateFromServer();
+    useFavouriteStore.getState().hydrateFromServer();
+    useUIStore.getState().hydrateFromServer();
+  }, []);
 
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
   const activeProject = useProjectStore((s) =>

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persistSettings } from '../lib/persist';
 
 export type ThemePreference = 'system' | 'dark' | 'light';
 
@@ -33,19 +34,26 @@ interface UIState {
   toggleEditorSync: () => void;
   setTheme: (theme: ThemePreference) => void;
   cycleTheme: () => void;
+  hydrateFromServer: () => Promise<void>;
 }
 
+// Fast-render cache: read theme from localStorage to prevent flash
 const initialTheme = (localStorage.getItem('paneful:theme') as ThemePreference) || 'system';
 applyThemeAttribute(initialTheme);
+
+function persistUI(get: () => UIState) {
+  const { theme, sidebarWidth, editorSyncEnabled } = get();
+  persistSettings({ ui: { theme, sidebarWidth, editorSyncEnabled } });
+}
 
 export const useUIStore = create<UIState>((set, get) => ({
   focusedTerminalId: null,
   sidebarOpen: true,
-  sidebarWidth: Number(localStorage.getItem('paneful:sidebar-width')) || 224,
+  sidebarWidth: 224,
   draggingTerminalId: null,
   dropTarget: null,
   connectionStatus: 'connecting',
-  editorSyncEnabled: localStorage.getItem('paneful:editor-sync') !== '0',
+  editorSyncEnabled: true,
   theme: initialTheme,
 
   setFocusedTerminal: (id) => set({ focusedTerminalId: id }),
@@ -53,21 +61,21 @@ export const useUIStore = create<UIState>((set, get) => ({
   setSidebarOpen: (open) => set({ sidebarOpen: open }),
   setSidebarWidth: (w) => {
     const clamped = Math.min(400, Math.max(160, w));
-    localStorage.setItem('paneful:sidebar-width', String(clamped));
     set({ sidebarWidth: clamped });
+    persistUI(get);
   },
   setDragging: (id) => set({ draggingTerminalId: id }),
   setDropTarget: (target) => set({ dropTarget: target }),
   setConnectionStatus: (status) => set({ connectionStatus: status }),
-  toggleEditorSync: () => set((s) => {
-    const next = !s.editorSyncEnabled;
-    localStorage.setItem('paneful:editor-sync', next ? '1' : '0');
-    return { editorSyncEnabled: next };
-  }),
+  toggleEditorSync: () => {
+    set((s) => ({ editorSyncEnabled: !s.editorSyncEnabled }));
+    persistUI(get);
+  },
   setTheme: (theme) => {
     localStorage.setItem('paneful:theme', theme);
     applyThemeAttribute(theme);
     set({ theme });
+    persistUI(get);
   },
   cycleTheme: () => {
     const order: ThemePreference[] = ['system', 'light', 'dark'];
@@ -76,5 +84,27 @@ export const useUIStore = create<UIState>((set, get) => ({
     localStorage.setItem('paneful:theme', next);
     applyThemeAttribute(next);
     set({ theme: next });
+    persistUI(get);
+  },
+
+  hydrateFromServer: async () => {
+    try {
+      const res = await fetch('/api/settings');
+      const settings = await res.json();
+      if (settings.ui) {
+        const { theme, sidebarWidth, editorSyncEnabled } = settings.ui;
+        if (theme) {
+          localStorage.setItem('paneful:theme', theme);
+          applyThemeAttribute(theme);
+        }
+        set({
+          ...(theme ? { theme } : {}),
+          ...(sidebarWidth !== undefined ? { sidebarWidth } : {}),
+          ...(editorSyncEnabled !== undefined ? { editorSyncEnabled } : {}),
+        });
+      }
+    } catch {
+      // Server unavailable, keep defaults
+    }
   },
 }));

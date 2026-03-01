@@ -42,6 +42,16 @@ async function getLatestVersion(): Promise<string | null> {
   }
 }
 
+function isNewerVersion(latest: string, current: string): boolean {
+  const l = latest.split('.').map(Number);
+  const c = current.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if ((l[i] || 0) > (c[i] || 0)) return true;
+    if ((l[i] || 0) < (c[i] || 0)) return false;
+  }
+  return false;
+}
+
 // ── Paths ──
 
 function dataDir(): string {
@@ -185,6 +195,7 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
     { ProjectStore },
     { WsHandler },
     { startIpcListener },
+    { SettingsStore },
   ] = await Promise.all([
     import('node:http'),
     import('express'),
@@ -194,6 +205,7 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
     import('./project-store.js'),
     import('./ws-handler.js'),
     import('./ipc.js'),
+    import('./settings-store.js'),
   ]);
 
   const app = express();
@@ -201,6 +213,7 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
 
   const ptyManager = new PtyManager();
   const projectStore = new ProjectStore(dataDir());
+  const settingsStore = new SettingsStore(dataDir());
 
   // API routes
   app.get('/api/projects', (_req, res) => {
@@ -224,6 +237,14 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
   app.get('/api/version', async (_req, res) => {
     const latest = await getLatestVersion();
     res.json({ current: CURRENT_VERSION, latest });
+  });
+
+  app.get('/api/settings', (_req, res) => {
+    res.json(settingsStore.get());
+  });
+
+  app.put('/api/settings', (req, res) => {
+    res.json(settingsStore.update(req.body));
   });
 
   app.post('/api/projects/:id/kill', (req, res) => {
@@ -296,6 +317,8 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
           projectName = parts[parts.length - 2];
         } else if (parts.length === 2) {
           projectName = parts[0];
+        } else {
+          projectName = title;
         }
       }
 
@@ -387,7 +410,7 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
   const server = http.createServer(app);
 
   // WebSocket handler
-  const wsHandler = new WsHandler(server, ptyManager, projectStore);
+  const wsHandler = new WsHandler(server, ptyManager, projectStore, { onIdle: () => shutdown() });
 
   // IPC listener
   const ipcServer = startIpcListener(socketPath(), ptyManager, projectStore, wsHandler);
@@ -408,19 +431,25 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
     writeLockfile(process.pid, actualPort);
     console.log(`Paneful running on http://localhost:${actualPort}`);
 
-    if (!devMode) {
+    if (!devMode && !process.env.PANEFUL_APP) {
       openBrowser(actualPort);
     }
   });
 
   // Graceful shutdown
+  let shuttingDown = false;
   const shutdown = () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
     console.log('Shutting down...');
     ptyManager.killAll();
     removeLockfile();
     ipcServer.close();
-    server.close();
-    process.exit(0);
+    server.close(() => {
+      process.exit(0);
+    });
+    // Force exit if server.close() hangs
+    setTimeout(() => process.exit(0), 2000);
   };
 
   process.on('SIGINT', shutdown);
@@ -435,13 +464,60 @@ program
   .option('--spawn', 'Spawn a new project in the current directory')
   .option('--list', 'List all projects')
   .option('--kill <name>', 'Kill a project by name')
-  .option('--install-app', 'Create Paneful.app in /Applications (macOS only)')
+  .option('--install-app', 'Create Paneful.app (macOS only)')
+  .option('--app-path <path>', 'Custom path for Paneful.app (default: /Applications/Paneful.app)')
   .option('--dev', 'Run in development mode (proxy to Vite dev server)')
-  .option('--port <number>', 'Port to listen on (default: random available)', parseInt)
-  .action(async (opts) => {
+  .option('--port <number>', 'Port to listen on (default: random)', parseInt);
+
+program
+  .command('update')
+  .description('Update paneful to the latest version')
+  .action(async () => {
+    const { execSync } = await import('node:child_process');
+
+    const latest = await getLatestVersion();
+    if (!latest) {
+      console.log('Could not check for updates. Try: npm install -g paneful@latest');
+      process.exit(1);
+    }
+    if (!isNewerVersion(latest, CURRENT_VERSION)) {
+      console.log(`Already on latest version (v${CURRENT_VERSION})`);
+      return;
+    }
+
+    console.log(`Updating paneful v${CURRENT_VERSION} → v${latest}...`);
+    execSync('npm install -g paneful@latest', { stdio: 'inherit' });
+
+    // Find existing Paneful.app to rebuild it in place
+    let appPath: string | null = null;
+    if (process.platform === 'darwin') {
+      try {
+        const found = execSync("mdfind \"kMDItemCFBundleIdentifier == 'com.paneful.app'\"", { encoding: 'utf-8' }).trim();
+        if (found) appPath = found.split('\n')[0];
+      } catch { /* spotlight unavailable */ }
+      // Fallback: check common locations
+      if (!appPath) {
+        for (const p of [
+          path.join(os.homedir(), 'Applications', 'Paneful.app'),
+          '/Applications/Paneful.app',
+        ]) {
+          if (fs.existsSync(p)) { appPath = p; break; }
+        }
+      }
+    }
+    if (appPath) {
+      console.log(`\nRebuilding ${appPath}...`);
+      const { installApp } = await import('./install-app.js');
+      await installApp(appPath);
+    }
+
+    console.log('\nUpdate complete!');
+  });
+
+program.action(async (opts) => {
     if (opts.installApp) {
       const { installApp } = await import('./install-app.js');
-      await installApp();
+      await installApp(opts.appPath);
       return;
     }
 
@@ -473,7 +549,7 @@ program
       removeLockfile();
     }
 
-    await startServer(opts.dev || false, opts.port || 56170);
+    await startServer(opts.dev || false, opts.port || 0);
   });
 
 program.parse();
