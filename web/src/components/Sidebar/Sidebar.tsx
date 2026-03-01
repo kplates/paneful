@@ -253,7 +253,7 @@ export function Sidebar() {
             }`}
             title={editorSyncEnabled
               ? 'Editor sync ON — auto-switches project based on your active editor. Click to disable.'
-              : 'Editor sync OFF — click to enable. Requires: (1) Terminal app in System Settings → Accessibility, (2) Editor window title includes folder name (default in VS Code/Cursor).'}
+              : 'Editor sync OFF — click to enable. Requires: (1) Paneful (or Terminal, if running from CLI) in System Settings → Privacy & Security → Accessibility, (2) Editor window title includes folder name (default in VS Code/Cursor). Note: after updating paneful, you may need to remove and re-add it in Accessibility settings.'}
           >
             <MonitorSmartphone size={14} />
           </button>
@@ -330,7 +330,7 @@ export function Sidebar() {
             <span>v{updateInfo.latest} available (current: v{updateInfo.current})</span>
           </a>
           <p className="text-[10px] text-[var(--text-muted)] mt-1">
-            npm update -g paneful
+            paneful update
           </p>
         </div>
       )}

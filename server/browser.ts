@@ -67,20 +67,22 @@ function tryChromeAppMode(url: string): boolean {
   const appArg = `--app=${url}`;
 
   if (process.platform === 'darwin') {
+    // Use "open -na" to launch via macOS app framework — directly executing
+    // the binary is unreliable from .app bundles and can trigger the
+    // "choose application" dialog.
     const browsers = [
-      '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-      '/Applications/Chromium.app/Contents/MacOS/Chromium',
-      '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-      '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
-      '/Applications/Arc.app/Contents/MacOS/Arc',
+      { app: 'Google Chrome', path: '/Applications/Google Chrome.app' },
+      { app: 'Chromium', path: '/Applications/Chromium.app' },
+      { app: 'Microsoft Edge', path: '/Applications/Microsoft Edge.app' },
+      { app: 'Brave Browser', path: '/Applications/Brave Browser.app' },
     ];
 
-    for (const browser of browsers) {
-      if (fs.existsSync(browser)) {
-        execFile(browser, [appArg], (err) => {
-          if (err) console.warn(`Failed to launch ${browser}:`, err.message);
+    for (const { app, path: appPath } of browsers) {
+      if (fs.existsSync(appPath)) {
+        execFile('open', ['-na', app, '--args', appArg], (err) => {
+          if (err) console.warn(`Failed to launch ${app}:`, err.message);
         });
-        console.log(`Opened in app mode via ${browser}`);
+        console.log(`Opened in app mode via ${app}`);
         return true;
       }
     }

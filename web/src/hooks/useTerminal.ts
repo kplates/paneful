@@ -144,6 +144,10 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
           sendMessage({ type: 'pty:input', terminalId, data: '\x05' });
           return false;
         }
+        if (e.key === 'Backspace') {
+          sendMessage({ type: 'pty:input', terminalId, data: '\x15' });
+          return false;
+        }
       }
       // Let Shift+Arrow and Ctrl+Shift+Arrow pass through to our shortcut handler
       if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) &&

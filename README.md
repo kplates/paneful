@@ -18,6 +18,8 @@ paneful --port 8080            # Use a specific port
 paneful --spawn                # Add current directory as a project
 paneful --list                 # List all projects
 paneful --kill my-project      # Kill a project by name
+paneful update                 # Update to the latest version
+paneful --install-app          # Install as a native macOS app
 ```
 
 ## Features
@@ -39,7 +41,7 @@ Save a workspace layout as a favourite — name, layout preset, and per-pane com
 Automatically switches the active project based on which editor window is in focus. Works with VS Code, Cursor, Zed, and Windsurf on macOS. Toggle via the monitor icon in the sidebar header.
 
 Requires:
-1. Terminal app added to **System Settings > Privacy & Security > Accessibility**
+1. **Paneful** (native app) or **Terminal** (CLI) added to **System Settings > Privacy & Security > Accessibility**
 2. Editor window title includes the folder name (default in VS Code/Cursor)
 
 ### Resizable Sidebar
@@ -49,6 +51,24 @@ Drag the right edge of the sidebar to resize it. Width persists across sessions.
 ### Auto-Reorganize
 
 Press `Cmd+R` or click the dashboard icon in the toolbar to automatically pick the best layout for your current pane count.
+
+### Native macOS App
+
+Install Paneful as a standalone macOS app with its own Dock icon and window:
+
+```bash
+paneful --install-app
+```
+
+A folder picker dialog lets you choose the install location (defaults to `/Applications`). The app launches Paneful in a native WebKit window — no browser tab needed. Updating via `paneful update` automatically rebuilds the `.app` in place.
+
+### Updating
+
+```bash
+paneful update
+```
+
+Checks npm for the latest version, installs it globally, and rebuilds the native `.app` if one is installed. The Dock icon stays valid automatically.
 
 ### Update Notifications
 

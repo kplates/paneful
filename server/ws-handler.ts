@@ -21,15 +21,22 @@ type ServerMessage =
   | { type: 'editor:active'; projectName: string }
   | { type: 'error'; message: string };
 
+export interface WsHandlerOptions {
+  onIdle?: () => void;
+}
+
 export class WsHandler {
   private wss: WebSocketServer;
   private client: WebSocket | null = null;
   private ptyManager: PtyManager;
   private projectStore: ProjectStore;
+  private idleTimer: ReturnType<typeof setTimeout> | null = null;
+  private onIdle?: () => void;
 
-  constructor(server: Server, ptyManager: PtyManager, projectStore: ProjectStore) {
+  constructor(server: Server, ptyManager: PtyManager, projectStore: ProjectStore, options?: WsHandlerOptions) {
     this.ptyManager = ptyManager;
     this.projectStore = projectStore;
+    this.onIdle = options?.onIdle;
 
     this.wss = new WebSocketServer({ noServer: true });
 
@@ -45,6 +52,10 @@ export class WsHandler {
 
     this.wss.on('connection', (ws) => {
       this.client = ws;
+      if (this.idleTimer) {
+        clearTimeout(this.idleTimer);
+        this.idleTimer = null;
+      }
       console.log('WebSocket client connected');
 
       ws.on('message', (raw) => {
@@ -59,13 +70,27 @@ export class WsHandler {
       ws.on('close', () => {
         console.log('WebSocket client disconnected');
         this.client = null;
+        this.startIdleTimer();
       });
 
       ws.on('error', (err) => {
         console.error('WebSocket error:', err.message);
         this.client = null;
+        this.startIdleTimer();
       });
     });
+  }
+
+  private startIdleTimer(): void {
+    if (!this.onIdle) return;
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    this.idleTimer = setTimeout(() => {
+      // Only fire if still no clients connected
+      if (!this.client || this.client.readyState !== WebSocket.OPEN) {
+        console.log('No clients connected for 5 seconds, shutting down...');
+        this.onIdle!();
+      }
+    }, 5000);
   }
 
   send(msg: ServerMessage): void {
