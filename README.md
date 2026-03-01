@@ -2,6 +2,8 @@
 
 A terminal multiplexer that runs in your browser. Split panes, organize by project, drag and drop from Finder, sync with your editor — all from a single `npm install`.
 
+**Website:** [kplates.github.io/paneful](https://kplates.github.io/paneful/)
+
 ![Paneful](screenshot.png)
 
 ## Install
@@ -41,6 +43,7 @@ Save a workspace layout as a favourite — name, layout preset, and per-pane com
 Automatically switches the active project based on which editor window is in focus. Works with VS Code, Cursor, Zed, and Windsurf on macOS. Toggle via the monitor icon in the sidebar header.
 
 Requires:
+
 1. **Paneful** (native app) or **Terminal** (CLI) added to **System Settings > Privacy & Security > Accessibility**
 2. Editor window title includes the folder name (default in VS Code/Cursor)
 
@@ -76,18 +79,18 @@ Paneful checks for newer versions on npm and shows a notification in the sidebar
 
 ## Keyboard Shortcuts
 
-| Shortcut          | Action                          |
-| ----------------- | ------------------------------- |
-| `Cmd+N`           | New pane (vertical split)       |
-| `Cmd+Shift+N`     | New pane (horizontal split)     |
-| `Cmd+W`           | Close focused pane              |
-| `Cmd+1-9`         | Focus pane by index             |
-| `Cmd+Arrow`       | Line start / end in terminal    |
-| `Ctrl+Shift+Arrow`| Move focus to adjacent pane     |
-| `Shift+Arrow`     | Swap focused pane with adjacent |
-| `Cmd+D`           | Toggle sidebar                  |
-| `Cmd+T`           | Cycle through layout presets    |
-| `Cmd+R`           | Auto reorganize panes           |
+| Shortcut           | Action                          |
+| ------------------ | ------------------------------- |
+| `Cmd+N`            | New pane (vertical split)       |
+| `Cmd+Shift+N`      | New pane (horizontal split)     |
+| `Cmd+W`            | Close focused pane              |
+| `Cmd+1-9`          | Focus pane by index             |
+| `Cmd+Arrow`        | Line start / end in terminal    |
+| `Ctrl+Shift+Arrow` | Move focus to adjacent pane     |
+| `Shift+Arrow`      | Swap focused pane with adjacent |
+| `Cmd+D`            | Toggle sidebar                  |
+| `Cmd+T`            | Cycle through layout presets    |
+| `Cmd+R`            | Auto reorganize panes           |
 
 ## Layout Presets
 
