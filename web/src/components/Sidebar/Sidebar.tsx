@@ -297,7 +297,7 @@ export function Sidebar() {
       </div>
 
       <div className="mx-3 mb-2 px-3 py-2.5 rounded-lg bg-[var(--surface-2)] text-[10px] text-[var(--text-muted)] leading-relaxed flex flex-col items-center gap-1.5 text-center">
-        <Lightbulb size={12} className="text-yellow-400" />
+        <Lightbulb size={12} className="text-yellow-500" />
         Drag a folder into this sidebar to create a project
       </div>
 

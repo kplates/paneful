@@ -61,19 +61,26 @@ export function useKeyboardShortcuts() {
       const meta = isMac ? e.metaKey : e.ctrlKey;
       if (!meta) return;
 
-      // Cmd+=/-/0: zoom (for native app where browser zoom isn't available)
+      // Cmd+=/-/0: CSS zoom for native app (WKWebView has no built-in browser zoom).
+      // In regular browsers (Chrome, Safari, etc.) we let native zoom handle it.
       if ((key === '=' || key === '+' || key === '-' || key === '0') && !e.shiftKey) {
-        const current = parseFloat(document.documentElement.style.zoom || '1');
-        if (key === '=' || key === '+') {
-          document.documentElement.style.zoom = String(Math.min(current + 0.1, 2));
-        } else if (key === '-') {
-          document.documentElement.style.zoom = String(Math.max(current - 0.1, 0.5));
-        } else {
-          document.documentElement.style.zoom = '1';
+        const isNativeApp = !('chrome' in window) && /AppleWebKit/.test(navigator.userAgent) && !(/Safari/.test(navigator.userAgent));
+        if (isNativeApp) {
+          e.preventDefault();
+          e.stopPropagation();
+          const current = parseFloat(document.documentElement.style.zoom || '1');
+          if (key === '=' || key === '+') {
+            document.documentElement.style.zoom = String(Math.min(current + 0.1, 2));
+          } else if (key === '-') {
+            document.documentElement.style.zoom = String(Math.max(current - 0.1, 0.5));
+          } else {
+            document.documentElement.style.zoom = '1';
+          }
+          // Trigger resize so xterm.js terminals refit
+          window.dispatchEvent(new Event('resize'));
+          return;
         }
-        // Trigger resize so xterm.js terminals refit
-        window.dispatchEvent(new Event('resize'));
-        return;
+        // In browsers: don't intercept — let native zoom work
       }
 
       // Immediately block browser defaults for our shortcuts
