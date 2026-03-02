@@ -61,7 +61,7 @@ export const XTERM_THEME_LIGHT = {
   blue: '#5b5bd6',
   magenta: '#9b3bb0',
   cyan: '#0f8a7e',
-  white: '#f5f5f7',
+  white: '#d0d0d8',
   brightBlack: '#8888a0',
   brightRed: '#e5484d',
   brightGreen: '#30a46c',
@@ -69,5 +69,5 @@ export const XTERM_THEME_LIGHT = {
   brightBlue: '#6e6ee6',
   brightMagenta: '#ab4aba',
   brightCyan: '#12a594',
-  brightWhite: '#ffffff',
+  brightWhite: '#d0d0d8',
 };

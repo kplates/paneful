@@ -94,8 +94,10 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
     }
 
     // ── Create new terminal ──
+    const theme = getCurrentXtermTheme();
+    const isLight = getResolvedTheme(useUIStore.getState().theme) === 'light';
     const term = new Terminal({
-      theme: getCurrentXtermTheme(),
+      theme,
       fontFamily: "'JetBrains Mono', 'Fira Code', 'SF Mono', 'Menlo', monospace",
       fontSize: 13,
       lineHeight: 1.2,
@@ -103,6 +105,7 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
       cursorStyle: 'block',
       allowProposedApi: true,
       scrollback: 10000,
+      minimumContrastRatio: isLight ? 7 : 1,
     });
 
     const fitAddon = new FitAddon();
@@ -203,7 +206,9 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
     const applyTheme = () => {
       const term = terminalRef.current;
       if (term) {
+        const isLight = getResolvedTheme(useUIStore.getState().theme) === 'light';
         term.options.theme = getCurrentXtermTheme();
+        term.options.minimumContrastRatio = isLight ? 7 : 1;
       }
     };
 
