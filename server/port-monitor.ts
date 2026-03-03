@@ -38,12 +38,14 @@ export class PortMonitor {
     // so scanning resumes automatically on restart.
     if (info.ports.size > 0) return;
 
-    // Append data to line buffer, strip ANSI codes
-    const clean = (info.lineBuffer + data).replace(ANSI_RE, '');
-    const lines = clean.split(/\r?\n/);
+    // Strip ANSI codes from just the new chunk, then append to line buffer
+    const clean = data.replace(ANSI_RE, '');
+    const combined = info.lineBuffer + clean;
+    const lines = combined.split(/\r?\n/);
 
-    // Keep last incomplete line in buffer
-    info.lineBuffer = lines.pop() ?? '';
+    // Keep last incomplete line in buffer, capped to prevent unbounded growth
+    const tail = lines.pop() ?? '';
+    info.lineBuffer = tail.length > 512 ? tail.slice(-512) : tail;
 
     let found = false;
     for (const line of lines) {
