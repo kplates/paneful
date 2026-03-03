@@ -46,7 +46,7 @@ export class WsHandler {
     this.portMonitor = new PortMonitor((ports) => {
       this.send({ type: 'port:status', ports });
     });
-    this.claudeMonitor = new ClaudeMonitor(ptyManager, projectStore, (statuses) => {
+    this.claudeMonitor = new ClaudeMonitor(ptyManager, (statuses) => {
       this.send({ type: 'claude:status', statuses });
     });
     this.claudeMonitor.start();
@@ -128,6 +128,7 @@ export class WsHandler {
 
       case 'pty:kill': {
         this.portMonitor.removeTerminal(msg.terminalId);
+        this.claudeMonitor.removeTerminal(msg.terminalId);
         const projectId = this.ptyManager.kill(msg.terminalId);
         if (projectId) {
           this.projectStore.removeTerminal(projectId, msg.terminalId);
@@ -177,9 +178,11 @@ export class WsHandler {
         (tid, data) => {
           this.send({ type: 'pty:output', terminalId: tid, data });
           this.portMonitor.scanOutput(tid, projectId, data);
+          this.claudeMonitor.recordOutput(tid);
         },
         (tid, exitCode) => {
           this.portMonitor.removeTerminal(tid);
+          this.claudeMonitor.removeTerminal(tid);
           this.send({ type: 'pty:exit', terminalId: tid, exitCode });
         },
       );
