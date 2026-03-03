@@ -111,6 +111,12 @@ export function useWebSocket() {
           return;
         }
 
+        // Handle Claude Code activity status
+        if (msg.type === 'claude:status') {
+          useSessionStore.getState().setClaudeStatus(msg.statuses);
+          return;
+        }
+
         // Handle active editor change (auto-focus project)
         if (msg.type === 'editor:active') {
           if (!useUIStore.getState().editorSyncEnabled) return;
@@ -132,6 +138,7 @@ export function useWebSocket() {
     ws.onclose = () => {
       setConnectionStatus('disconnected');
       useSessionStore.getState().setActivePorts({});
+      useSessionStore.getState().setClaudeStatus({});
       globalWs = null;
       reconnectTimeout.current = setTimeout(connect, 2000);
     };

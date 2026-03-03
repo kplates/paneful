@@ -98,4 +98,20 @@ export class PtyManager {
   terminalExists(terminalId: string): boolean {
     return this.sessions.has(terminalId);
   }
+
+  /** Returns projectIds that have a terminal with `claude` as the foreground process. */
+  getClaudeProjects(): Set<string> {
+    const result = new Set<string>();
+    for (const managed of this.sessions.values()) {
+      try {
+        const proc = managed.process.process;
+        if (proc === 'claude') {
+          result.add(managed.projectId);
+        }
+      } catch {
+        // PTY may have been killed
+      }
+    }
+    return result;
+  }
 }

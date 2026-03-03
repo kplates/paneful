@@ -15,4 +15,5 @@ export type ServerMessage =
   | { type: 'project:spawned'; projectId: string; name: string; cwd: string }
   | { type: 'editor:active'; projectName: string }
   | { type: 'port:status'; ports: Record<string, number[]> }
+  | { type: 'claude:status'; statuses: Record<string, 'active' | 'idle'> }
   | { type: 'error'; message: string };

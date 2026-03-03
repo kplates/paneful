@@ -33,9 +33,9 @@ export function SyncToast() {
         setTimeout(dismissSyncToast, 200);
       }}
       style={{
-        position: 'fixed',
-        bottom: 16,
-        right: 16,
+        position: 'absolute',
+        top: 16,
+        left: '50%',
         zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
@@ -49,7 +49,7 @@ export function SyncToast() {
         cursor: 'pointer',
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(8px)',
+        transform: visible ? 'translate(-50%, 0)' : 'translate(-50%, -8px)',
         transition: 'opacity 200ms ease, transform 200ms ease',
         pointerEvents: visible ? 'auto' : 'none',
       }}
