@@ -114,6 +114,7 @@ export function useWebSocket() {
             return p.name === msg.projectName || folderName === msg.projectName;
           });
           if (match && match.id !== activeProjectId) {
+            useUIStore.getState().showSyncToast(match.name);
             setActiveProject(match.id);
           }
         }

@@ -23,6 +23,7 @@ interface UIState {
   connectionStatus: 'connecting' | 'connected' | 'disconnected';
   editorSyncEnabled: boolean;
   theme: ThemePreference;
+  syncToast: { projectName: string; id: number } | null;
 
   setFocusedTerminal: (id: string | null) => void;
   toggleSidebar: () => void;
@@ -34,6 +35,8 @@ interface UIState {
   toggleEditorSync: () => void;
   setTheme: (theme: ThemePreference) => void;
   cycleTheme: () => void;
+  showSyncToast: (projectName: string) => void;
+  dismissSyncToast: () => void;
   hydrateFromServer: () => Promise<void>;
 }
 
@@ -55,6 +58,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   connectionStatus: 'connecting',
   editorSyncEnabled: true,
   theme: initialTheme,
+  syncToast: null,
 
   setFocusedTerminal: (id) => set({ focusedTerminalId: id }),
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
@@ -86,6 +90,11 @@ export const useUIStore = create<UIState>((set, get) => ({
     set({ theme: next });
     persistUI(get);
   },
+
+  showSyncToast: (projectName) => {
+    set({ syncToast: { projectName, id: Date.now() } });
+  },
+  dismissSyncToast: () => set({ syncToast: null }),
 
   hydrateFromServer: async () => {
     try {
