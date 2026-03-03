@@ -99,14 +99,15 @@ export class PtyManager {
     return this.sessions.has(terminalId);
   }
 
-  /** Returns projectIds that have a terminal with `claude` as the foreground process. */
-  getClaudeProjects(): Set<string> {
-    const result = new Set<string>();
-    for (const managed of this.sessions.values()) {
+  /** Returns projectId → terminalIds[] for terminals with `claude` as foreground process. */
+  getClaudeProjects(): Map<string, string[]> {
+    const result = new Map<string, string[]>();
+    for (const [terminalId, managed] of this.sessions) {
       try {
-        const proc = managed.process.process;
-        if (proc === 'claude') {
-          result.add(managed.projectId);
+        if (managed.process.process === 'claude') {
+          const list = result.get(managed.projectId);
+          if (list) list.push(terminalId);
+          else result.set(managed.projectId, [terminalId]);
         }
       } catch {
         // PTY may have been killed
