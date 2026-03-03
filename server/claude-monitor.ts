@@ -48,11 +48,10 @@ export class ClaudeMonitor {
     if (this.destroyed) return;
 
     const now = Date.now();
-    // Which projects have claude running, and what's the latest output time per project?
-    const claudeProjects = this.ptyManager.getClaudeProjects();
+    const agentProjects = this.ptyManager.getAgentProjects();
     const statuses: Record<string, ClaudeStatus> = {};
 
-    for (const [projectId, terminalIds] of claudeProjects) {
+    for (const [projectId, terminalIds] of agentProjects) {
       let latestOutput = 0;
       for (const tid of terminalIds) {
         const ts = this.lastOutput.get(tid) ?? 0;

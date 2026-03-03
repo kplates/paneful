@@ -99,12 +99,13 @@ export class PtyManager {
     return this.sessions.has(terminalId);
   }
 
-  /** Returns projectId → terminalIds[] for terminals with `claude` as foreground process. */
-  getClaudeProjects(): Map<string, string[]> {
+  /** Returns projectId → terminalIds[] for terminals running an AI coding agent. */
+  getAgentProjects(): Map<string, string[]> {
     const result = new Map<string, string[]>();
     for (const [terminalId, managed] of this.sessions) {
       try {
-        if (managed.process.process === 'claude') {
+        const proc = managed.process.process;
+        if (proc === 'claude' || proc.startsWith('codex')) {
           const list = result.get(managed.projectId);
           if (list) list.push(terminalId);
           else result.set(managed.projectId, [terminalId]);
