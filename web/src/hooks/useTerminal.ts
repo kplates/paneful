@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
+import { SearchAddon } from '@xterm/addon-search';
 import { sendMessage } from './useWebSocket';
 import { useSessionStore } from '../stores/sessionStore';
 import { useUIStore, getResolvedTheme } from '../stores/uiStore';
@@ -18,6 +19,13 @@ const spawnedTerminals = new Set<string>();
 // Store the xterm DOM element per terminal so we can reparent it on remount
 // instead of calling term.open() again (which xterm doesn't support)
 const terminalElements = new Map<string, HTMLElement>();
+
+// Search addons per terminal (persists across remounts with the terminal instance)
+const searchAddons = new Map<string, SearchAddon>();
+
+export function getSearchAddon(terminalId: string): SearchAddon | undefined {
+  return searchAddons.get(terminalId);
+}
 
 // Pending commands to send when a terminal's shell is ready (first output)
 const pendingCommands = new Map<string, string>();
@@ -110,10 +118,14 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
 
     const fitAddon = new FitAddon();
     const webLinksAddon = new WebLinksAddon();
+    const searchAddon = new SearchAddon();
 
     term.loadAddon(fitAddon);
     term.loadAddon(webLinksAddon);
+    term.loadAddon(searchAddon);
     term.open(container);
+
+    searchAddons.set(terminalId, searchAddon);
 
     terminalRef.current = term;
     fitAddonRef.current = fitAddon;
@@ -151,6 +163,14 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
           sendMessage({ type: 'pty:input', terminalId, data: '\x15' });
           return false;
         }
+      }
+      // Cmd+F: let capture-phase handler in useKeyboardShortcuts open search UI
+      if (e.metaKey && e.key === 'f' && !e.altKey && !e.ctrlKey) {
+        return false;
+      }
+      // Cmd+P: let capture-phase handler open command palette
+      if (e.metaKey && e.key === 'p' && !e.altKey && !e.ctrlKey) {
+        return false;
       }
       // Let Shift+Arrow and Ctrl+Shift+Arrow pass through to our shortcut handler
       if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) &&
@@ -263,4 +283,5 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
 export function cleanupTerminal(terminalId: string) {
   spawnedTerminals.delete(terminalId);
   terminalElements.delete(terminalId);
+  searchAddons.delete(terminalId);
 }

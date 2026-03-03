@@ -800,6 +800,41 @@
             </p>
           </div>
           <div class="feature-card">
+            <span class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 1.95-1.4 3.58-3.25 3.93"/><path d="M12 2a4 4 0 0 0-4 4c0 1.95 1.4 3.58 3.25 3.93"/><path d="M12 10v4"/><circle cx="12" cy="18" r="3"/><path d="M8.5 2.5L6 5"/><path d="M15.5 2.5L18 5"/></svg></span>
+            <h3>AI Agent Detection</h3>
+            <p>
+              Detects when Claude Code or Codex CLI is running in a terminal.
+              A purple <strong>AI</strong> badge appears next to the project name —
+              pulsing when the agent is actively working.
+            </p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+            <h3>Terminal Search</h3>
+            <p>
+              Press <kbd>Cmd+F</kbd> to search terminal scrollback.
+              Navigate matches with Enter / Shift+Enter. Escape to close.
+            </p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6"/><path d="M12 6v6"/></svg></span>
+            <h3>Command Palette</h3>
+            <p>
+              Press <kbd>Cmd+P</kbd> to open the command palette. Switch projects,
+              launch favourites, change layouts, or run actions — all from one
+              fuzzy-searchable list.
+            </p>
+          </div>
+          <div class="feature-card">
+            <span class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg></span>
+            <h3>Git Branch Display</h3>
+            <p>
+              Shows the current Git branch next to each project in the sidebar
+              as a styled pill badge. Updates automatically. Non-git directories
+              show no badge.
+            </p>
+          </div>
+          <div class="feature-card">
             <span class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8l4 4-4 4"/><line x1="12" y1="16" x2="18" y2="16"/></svg></span>
             <h3>Keyboard Shortcuts</h3>
             <p>
@@ -979,6 +1014,14 @@
               </tr>
             </thead>
             <tbody>
+              <tr>
+                <td><kbd>Cmd+P</kbd></td>
+                <td>Command palette</td>
+              </tr>
+              <tr>
+                <td><kbd>Cmd+F</kbd></td>
+                <td>Search terminal scrollback</td>
+              </tr>
               <tr>
                 <td><kbd>Cmd+N</kbd></td>
                 <td>New pane (vertical split)</td>

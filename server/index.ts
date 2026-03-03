@@ -252,6 +252,32 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
     res.json({ killed: killed.length });
   });
 
+  function getStaleProjects(): { id: string; name: string; cwd: string }[] {
+    const stale: { id: string; name: string; cwd: string }[] = [];
+    for (const project of projectStore.list()) {
+      try {
+        const stat = fs.statSync(project.cwd);
+        if (!stat.isDirectory()) throw new Error('not a directory');
+      } catch {
+        stale.push({ id: project.id, name: project.name, cwd: project.cwd });
+      }
+    }
+    return stale;
+  }
+
+  app.get('/api/cleanup-projects', (_req, res) => {
+    res.json({ stale: getStaleProjects() });
+  });
+
+  app.post('/api/cleanup-projects', (_req, res) => {
+    const stale = getStaleProjects();
+    for (const project of stale) {
+      ptyManager.killProject(project.id);
+      projectStore.remove(project.id);
+    }
+    res.json({ removed: stale.map((p) => p.name) });
+  });
+
   app.post('/api/validate-path', (req, res) => {
     const { path: rawPath } = req.body;
     if (!rawPath) { res.json({ valid: false }); return; }

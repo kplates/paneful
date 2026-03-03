@@ -51,9 +51,29 @@ Requires:
 
 Save a workspace layout as a favourite — name, layout preset, and per-pane commands. Launch any favourite with a click to instantly recreate the setup.
 
+### Terminal Search
+
+Press `Cmd+F` in any focused terminal to search its scrollback. Navigate matches with Enter / Shift+Enter or the up/down buttons. Press Escape to close.
+
+### Command Palette
+
+Press `Cmd+P` to open the command palette. Quickly switch projects, launch favourites, change layouts, or run any action — all from one fuzzy-searchable list.
+
+### Git Branch Display
+
+The sidebar shows the current Git branch next to each project's working directory as a small pill badge. Updates automatically every 10 seconds. Non-git directories show no badge.
+
+### AI Agent Detection
+
+Automatically detects when Claude Code or Codex CLI is running in a Paneful terminal. A purple **AI** badge appears next to the project name in the sidebar — pulsing when the agent is actively working, dimmed when idle. Disappears instantly when the agent exits. Uses zero filesystem access; detection is purely in-memory via the PTY process name and terminal output timestamps.
+
 ### Dev Server Detection
 
 Automatically detects when a dev server starts in a terminal (Vite, Next.js, Angular, etc.). A green dot appears next to the project name in the sidebar while the port is alive, and disappears when it stops. Tracks ports per-terminal so the same port across different projects is handled correctly.
+
+### Project Cleanup
+
+Click the broom icon in the sidebar header to scan for projects whose directories no longer exist on disk. A confirmation modal shows matching projects before removing them.
 
 ### Auto-Reorganize
 
@@ -85,6 +105,8 @@ Paneful checks for newer versions on npm and shows a notification in the sidebar
 
 | Shortcut           | Action                          |
 | ------------------ | ------------------------------- |
+| `Cmd+P`            | Command palette                 |
+| `Cmd+F`            | Search terminal scrollback      |
 | `Cmd+N`            | New pane (vertical split)       |
 | `Cmd+Shift+N`      | New pane (horizontal split)     |
 | `Cmd+W`            | Close focused pane              |

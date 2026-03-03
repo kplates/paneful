@@ -10,7 +10,7 @@ import type { PresetName } from '../lib/layout-engine';
 
 // Keys we need to hijack from the browser — must preventDefault in capture phase
 // BEFORE the browser's default handler fires
-const HIJACKED_KEYS = new Set(['n', 'w', 't', 'd', 'r']);
+const HIJACKED_KEYS = new Set(['n', 'w', 't', 'd', 'r', 'f', 'p']);
 
 export function useKeyboardShortcuts() {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
@@ -97,6 +97,20 @@ export function useKeyboardShortcuts() {
       const layout = useLayoutStore.getState().getLayout(activeProjectId);
       const focusedId = useUIStore.getState().focusedTerminalId;
       const project = useProjectStore.getState().projects[activeProjectId];
+
+      // Cmd+P: toggle command palette
+      if (key === 'p' && !e.shiftKey) {
+        useUIStore.getState().toggleCommandPalette();
+        return;
+      }
+
+      // Cmd+F: open search in focused terminal
+      if (key === 'f' && !e.shiftKey) {
+        if (focusedId) {
+          useUIStore.getState().openSearch(focusedId);
+        }
+        return;
+      }
 
       // Cmd+D: toggle sidebar
       if (key === 'd' && !e.shiftKey) {

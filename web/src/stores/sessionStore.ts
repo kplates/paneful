@@ -13,6 +13,7 @@ interface SessionState {
   sessions: Record<string, TerminalSession>;
   activePorts: Record<string, number[]>;
   claudeStatus: Record<string, 'active' | 'idle'>;
+  gitBranches: Record<string, string | null>;
 
   createSession: (terminalId: string, projectId: string) => void;
   setTerminalInstance: (terminalId: string, terminal: Terminal) => void;
@@ -23,12 +24,14 @@ interface SessionState {
   getProjectSessions: (projectId: string) => TerminalSession[];
   setActivePorts: (ports: Record<string, number[]>) => void;
   setClaudeStatus: (statuses: Record<string, 'active' | 'idle'>) => void;
+  setGitBranches: (branches: Record<string, string | null>) => void;
 }
 
 export const useSessionStore = create<SessionState>((set, get) => ({
   sessions: {},
   activePorts: {},
   claudeStatus: {},
+  gitBranches: {},
 
   createSession: (terminalId, projectId) =>
     set((s) => ({
@@ -88,4 +91,6 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   setActivePorts: (ports) => set({ activePorts: ports }),
 
   setClaudeStatus: (statuses) => set({ claudeStatus: statuses }),
+
+  setGitBranches: (branches) => set({ gitBranches: branches }),
 }));

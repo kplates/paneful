@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, PanelLeftClose, ArrowUpCircle, Lightbulb, MonitorSmartphone, Sun, Moon, Monitor } from 'lucide-react';
+import { Plus, PanelLeftClose, ArrowUpCircle, Lightbulb, MonitorSmartphone, Sun, Moon, Monitor, Brush } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 import { useLayoutStore } from '../../stores/layoutStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -54,10 +54,46 @@ export function Sidebar() {
   const cycleTheme = useUIStore((s) => s.cycleTheme);
   const activePorts = useSessionStore((s) => s.activePorts);
   const claudeStatus = useSessionStore((s) => s.claudeStatus);
+  const gitBranches = useSessionStore((s) => s.gitBranches);
   const favourites = useFavouriteStore((s) => s.favourites);
   const addFavourite = useFavouriteStore((s) => s.addFavourite);
   const updateFavourite = useFavouriteStore((s) => s.updateFavourite);
   const removeFavourite = useFavouriteStore((s) => s.removeFavourite);
+
+  const pendingFavouriteLaunchId = useUIStore((s) => s.pendingFavouriteLaunchId);
+  const clearPendingFavouriteLaunch = useUIStore((s) => s.clearPendingFavouriteLaunch);
+
+  const [cleanupStale, setCleanupStale] = useState<{ id: string; name: string; cwd: string }[] | null>(null);
+  const [pendingRemoveId, setPendingRemoveId] = useState<string | null>(null);
+
+  const handleCleanupCheck = useCallback(() => {
+    fetch('/api/cleanup-projects')
+      .then((r) => r.json())
+      .then((data: { stale: { id: string; name: string; cwd: string }[] }) => {
+        if (data.stale.length === 0) {
+          setCleanupStale([]);
+          setTimeout(() => setCleanupStale(null), 2000);
+        } else {
+          setCleanupStale(data.stale);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleCleanupConfirm = useCallback(() => {
+    fetch('/api/cleanup-projects', { method: 'POST' })
+      .then((r) => r.json())
+      .then((data: { removed: string[] }) => {
+        for (const project of Object.values(projects)) {
+          if (data.removed.includes(project.name)) {
+            useLayoutStore.getState().removeProjectLayout(project.id);
+            removeProject(project.id);
+          }
+        }
+        setCleanupStale(null);
+      })
+      .catch(() => {});
+  }, [projects, removeProject]);
 
   const handleCreate = (name: string, cwd: string) => {
     // Don't create duplicate project for the same directory
@@ -77,13 +113,19 @@ export function Sidebar() {
   };
 
   const handleRemove = (projectId: string) => {
-    handleKill(projectId);
-    sendMessage({ type: 'project:remove', projectId });
-    useLayoutStore.getState().removeProjectLayout(projectId);
-    removeProject(projectId);
+    setPendingRemoveId(projectId);
   };
 
-  const executeLaunch = (favourite: Favourite) => {
+  const handleRemoveConfirm = () => {
+    if (!pendingRemoveId) return;
+    handleKill(pendingRemoveId);
+    sendMessage({ type: 'project:remove', projectId: pendingRemoveId });
+    useLayoutStore.getState().removeProjectLayout(pendingRemoveId);
+    removeProject(pendingRemoveId);
+    setPendingRemoveId(null);
+  };
+
+  const executeLaunch = useCallback((favourite: Favourite) => {
     if (!activeProjectId) return;
     const project = projects[activeProjectId];
     if (!project) return;
@@ -114,9 +156,9 @@ export function Sidebar() {
     if (newIds.length > 0) {
       useUIStore.getState().setFocusedTerminal(newIds[0]);
     }
-  };
+  }, [activeProjectId, projects, addTerminalToProject]);
 
-  const handleLaunchFavourite = (favourite: Favourite) => {
+  const handleLaunchFavourite = useCallback((favourite: Favourite) => {
     if (!activeProjectId) return;
 
     const layout = useLayoutStore.getState().getLayout(activeProjectId);
@@ -128,7 +170,15 @@ export function Sidebar() {
     } else {
       executeLaunch(favourite);
     }
-  };
+  }, [activeProjectId, executeLaunch]);
+
+  // Handle favourite launches requested from command palette
+  useEffect(() => {
+    if (!pendingFavouriteLaunchId) return;
+    const fav = favourites[pendingFavouriteLaunchId];
+    clearPendingFavouriteLaunch();
+    if (fav) handleLaunchFavourite(fav);
+  }, [pendingFavouriteLaunchId, favourites, clearPendingFavouriteLaunch, handleLaunchFavourite]);
 
   const handleEditFavourite = (favourite: Favourite) => {
     setEditingFavourite(favourite);
@@ -261,6 +311,13 @@ export function Sidebar() {
             <MonitorSmartphone size={14} />
           </button>
           <button
+            onClick={handleCleanupCheck}
+            className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)] transition-colors"
+            title="Clean up stale projects"
+          >
+            <Brush size={14} />
+          </button>
+          <button
             onClick={toggleSidebar}
             className="p-1 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)] transition-colors"
             title="Hide sidebar"
@@ -285,6 +342,7 @@ export function Sidebar() {
                 isActive={project.id === activeProjectId}
                 hasActivePorts={(activePorts[project.id]?.length ?? 0) > 0}
                 claudeStatus={claudeStatus[project.id] ?? null}
+                gitBranch={gitBranches[project.id] ?? null}
                 onClick={() => setActiveProject(project.id)}
                 onKill={() => handleKill(project.id)}
                 onRemove={() => handleRemove(project.id)}
@@ -362,6 +420,86 @@ export function Sidebar() {
         terminalCount={existingTerminalCount}
         favouriteName={pendingLaunch?.name ?? ''}
       />
+
+      {cleanupStale !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setCleanupStale(null)}
+        >
+          <div
+            className="bg-[var(--surface-1)] border border-[var(--border)] rounded-xl p-5 w-80 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">
+              Clean Up Projects
+            </h3>
+            {cleanupStale.length === 0 ? (
+              <p className="text-xs text-[var(--text-muted)]">All projects have valid directories.</p>
+            ) : (
+              <>
+                <p className="text-xs text-[var(--text-secondary)] mb-3">
+                  {cleanupStale.length} project{cleanupStale.length > 1 ? 's' : ''} with missing directories:
+                </p>
+                <div className="space-y-1.5 mb-4 max-h-40 overflow-y-auto">
+                  {cleanupStale.map((p) => (
+                    <div key={p.id} className="text-xs px-2 py-1.5 rounded bg-[var(--surface-2)]">
+                      <div className="font-medium text-[var(--text-primary)]">{p.name}</div>
+                      <div className="text-[10px] text-[var(--text-muted)] font-mono truncate">{p.cwd}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setCleanupStale(null)}
+                    className="px-3 py-1.5 text-xs rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-2)] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCleanupConfirm}
+                    className="px-3 py-1.5 text-xs rounded-lg bg-[var(--danger)] text-white hover:opacity-90 transition-opacity"
+                  >
+                    Remove {cleanupStale.length} project{cleanupStale.length > 1 ? 's' : ''}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {pendingRemoveId && projects[pendingRemoveId] && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setPendingRemoveId(null)}
+        >
+          <div
+            className="bg-[var(--surface-1)] border border-[var(--border)] rounded-xl p-5 w-80 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">
+              Remove Project
+            </h3>
+            <p className="text-xs text-[var(--text-secondary)] mb-4">
+              Remove <strong>{projects[pendingRemoveId].name}</strong>? This will kill all its terminals.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setPendingRemoveId(null)}
+                className="px-3 py-1.5 text-xs rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-2)] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRemoveConfirm}
+                className="px-3 py-1.5 text-xs rounded-lg bg-[var(--danger)] text-white hover:opacity-90 transition-opacity"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

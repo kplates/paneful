@@ -12,6 +12,7 @@ import { Toolbar } from './components/Toolbar/Toolbar';
 import { TerminalGrid } from './components/TerminalGrid/TerminalGrid';
 import { EmptyState } from './components/EmptyState';
 import { SyncToast } from './components/SyncToast';
+import { CommandPalette } from './components/CommandPalette';
 import { Direction } from './lib/layout-engine';
 
 export function App() {
@@ -65,6 +66,7 @@ export function App() {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[var(--surface-0)]">
       <Sidebar />
+      <CommandPalette />
 
       <div className="relative flex-1 flex flex-col min-w-0">
         <SyncToast />
