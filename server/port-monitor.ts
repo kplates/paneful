@@ -1,10 +1,12 @@
-import net from 'node:net';
+import net from "node:net";
 
 // Strip ANSI escape codes from PTY output
-const ANSI_RE = /\x1b\[[0-9;]*[a-zA-Z]|\x1b\].*?(?:\x07|\x1b\\)|\x1b[()][0-9A-B]/g;
+const ANSI_RE =
+  /\x1b\[[0-9;]*[a-zA-Z]|\x1b\].*?(?:\x07|\x1b\\)|\x1b[()][0-9A-B]/g;
 
 // Match dev-server URLs like http://localhost:3000, http://127.0.0.1:8080, etc.
-const PORT_RE = /https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[?::1?\]?):(\d{1,5})/g;
+const PORT_RE =
+  /https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0|\[?::1?\]?):(\d{1,5})/g;
 
 interface TerminalInfo {
   projectId: string;
@@ -29,7 +31,7 @@ export class PortMonitor {
 
     let info = this.terminals.get(terminalId);
     if (!info) {
-      info = { projectId, ports: new Set(), lineBuffer: '' };
+      info = { projectId, ports: new Set(), lineBuffer: "" };
       this.terminals.set(terminalId, info);
     }
 
@@ -39,12 +41,12 @@ export class PortMonitor {
     if (info.ports.size > 0) return;
 
     // Strip ANSI codes from just the new chunk, then append to line buffer
-    const clean = data.replace(ANSI_RE, '');
+    const clean = data.replace(ANSI_RE, "");
     const combined = info.lineBuffer + clean;
     const lines = combined.split(/\r?\n/);
 
     // Keep last incomplete line in buffer, capped to prevent unbounded growth
-    const tail = lines.pop() ?? '';
+    const tail = lines.pop() ?? "";
     info.lineBuffer = tail.length > 512 ? tail.slice(-512) : tail;
 
     let found = false;
@@ -132,20 +134,33 @@ export class PortMonitor {
       [...uniquePorts].map(
         (port) =>
           new Promise<void>((resolve) => {
-            const sock = net.createConnection({ port, host: '127.0.0.1' }, () => {
-              probeResults.set(port, true);
-              sock.destroy();
-              resolve();
-            });
-            sock.on('error', () => {
-              probeResults.set(port, false);
-              resolve();
-            });
-            sock.setTimeout(2000, () => {
-              probeResults.set(port, false);
-              sock.destroy();
-              resolve();
-            });
+            // Try IPv4 first, fall back to IPv6 (::1).
+            // Many dev servers (Angular/Vite) bind to ::1 on macOS.
+            const tryConnect = (host: string, fallback?: string) => {
+              const sock = net.createConnection({ port, host }, () => {
+                probeResults.set(port, true);
+                sock.destroy();
+                resolve();
+              });
+              sock.on("error", () => {
+                if (fallback) {
+                  tryConnect(fallback);
+                } else {
+                  probeResults.set(port, false);
+                  resolve();
+                }
+              });
+              sock.setTimeout(2000, () => {
+                sock.destroy();
+                if (fallback) {
+                  tryConnect(fallback);
+                } else {
+                  probeResults.set(port, false);
+                  resolve();
+                }
+              });
+            };
+            tryConnect("127.0.0.1", "::1");
           }),
       ),
     );
