@@ -117,6 +117,12 @@ export function useWebSocket() {
           return;
         }
 
+        // Handle git branch updates
+        if (msg.type === 'git:branch') {
+          useSessionStore.getState().setGitBranches(msg.branches);
+          return;
+        }
+
         // Handle active editor change (auto-focus project)
         if (msg.type === 'editor:active') {
           if (!useUIStore.getState().editorSyncEnabled) return;
@@ -139,6 +145,7 @@ export function useWebSocket() {
       setConnectionStatus('disconnected');
       useSessionStore.getState().setActivePorts({});
       useSessionStore.getState().setClaudeStatus({});
+      useSessionStore.getState().setGitBranches({});
       globalWs = null;
       reconnectTimeout.current = setTimeout(connect, 2000);
     };

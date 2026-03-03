@@ -10,6 +10,8 @@ const KEY_CLASS =
   'border border-[var(--border)] rounded-md px-1.5 py-0.5 bg-[var(--surface-0)] text-[11px] font-mono min-w-[24px] text-center inline-flex items-center justify-center shadow-[0_1px_0_var(--border)]';
 
 const shortcuts: { keys: string[]; action: string }[] = [
+  { keys: ['⌘', 'P'], action: 'Command palette' },
+  { keys: ['⌘', 'F'], action: 'Search terminal' },
   { keys: ['⌘', 'N'], action: 'New pane (vertical)' },
   { keys: ['⌘', '⇧', 'N'], action: 'New pane (horizontal)' },
   { keys: ['⌘', 'W'], action: 'Close pane' },

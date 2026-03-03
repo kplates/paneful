@@ -4,6 +4,7 @@ import { PtyManager } from './pty-manager.js';
 import { ProjectStore, newProject } from './project-store.js';
 import { PortMonitor } from './port-monitor.js';
 import { ClaudeMonitor } from './claude-monitor.js';
+import { GitMonitor } from './git-monitor.js';
 
 // Client → Server
 type ClientMessage =
@@ -23,6 +24,7 @@ type ServerMessage =
   | { type: 'editor:active'; projectName: string }
   | { type: 'port:status'; ports: Record<string, number[]> }
   | { type: 'claude:status'; statuses: Record<string, 'active' | 'idle'> }
+  | { type: 'git:branch'; branches: Record<string, string | null> }
   | { type: 'error'; message: string };
 
 export interface WsHandlerOptions {
@@ -36,6 +38,7 @@ export class WsHandler {
   private projectStore: ProjectStore;
   private portMonitor: PortMonitor;
   private claudeMonitor: ClaudeMonitor;
+  private gitMonitor: GitMonitor;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private onIdle?: () => void;
 
@@ -50,6 +53,9 @@ export class WsHandler {
       this.send({ type: 'claude:status', statuses });
     });
     this.claudeMonitor.start();
+    this.gitMonitor = new GitMonitor(projectStore, (branches) => {
+      this.send({ type: 'git:branch', branches });
+    });
 
     this.wss = new WebSocketServer({ noServer: true });
 
@@ -70,6 +76,12 @@ export class WsHandler {
         this.idleTimer = null;
       }
       console.log('WebSocket client connected');
+
+      // Send current git branch state to newly connected client
+      const branches = this.gitMonitor.getBranches();
+      if (Object.keys(branches).length > 0) {
+        this.send({ type: 'git:branch', branches });
+      }
 
       ws.on('message', (raw) => {
         try {
@@ -167,6 +179,7 @@ export class WsHandler {
   destroy(): void {
     this.portMonitor.destroy();
     this.claudeMonitor.destroy();
+    this.gitMonitor.destroy();
   }
 
   private handlePtySpawn(terminalId: string, projectId: string, cwd: string): void {

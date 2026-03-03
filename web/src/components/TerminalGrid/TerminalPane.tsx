@@ -9,6 +9,7 @@ import { useSessionStore } from '../../stores/sessionStore';
 import { sendMessage } from '../../hooks/useWebSocket';
 import { getTerminalIds } from '../../lib/layout-engine';
 import { PaneHeader } from './PaneHeader';
+import { SearchBar } from './SearchBar';
 import { DropIndicator } from './DropIndicator';
 
 interface TerminalPaneProps {
@@ -20,8 +21,10 @@ interface TerminalPaneProps {
 export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) {
   const focusedTerminalId = useUIStore((s) => s.focusedTerminalId);
   const draggingTerminalId = useUIStore((s) => s.draggingTerminalId);
+  const searchTerminalId = useUIStore((s) => s.searchTerminalId);
   const isFocused = focusedTerminalId === terminalId;
   const isDragging = draggingTerminalId === terminalId;
+  const isSearchOpen = searchTerminalId === terminalId;
 
   const { containerRef, fit, focus } = useTerminal({ terminalId, projectId, cwd });
   const dragProps = usePaneDrag(terminalId, projectId);
@@ -143,6 +146,15 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
           onDragEnd: dragProps.onDragEnd,
         }}
       />
+      {isSearchOpen && (
+        <SearchBar
+          terminalId={terminalId}
+          onClose={() => {
+            useUIStore.getState().closeSearch();
+            focus();
+          }}
+        />
+      )}
       <div
         ref={containerRef}
         className="flex-1 min-h-0 min-w-0 overflow-hidden"

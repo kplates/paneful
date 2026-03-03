@@ -24,6 +24,9 @@ interface UIState {
   editorSyncEnabled: boolean;
   theme: ThemePreference;
   syncToast: { projectName: string; id: number } | null;
+  searchTerminalId: string | null;
+  commandPaletteOpen: boolean;
+  pendingFavouriteLaunchId: string | null;
 
   setFocusedTerminal: (id: string | null) => void;
   toggleSidebar: () => void;
@@ -37,6 +40,12 @@ interface UIState {
   cycleTheme: () => void;
   showSyncToast: (projectName: string) => void;
   dismissSyncToast: () => void;
+  openSearch: (terminalId: string) => void;
+  closeSearch: () => void;
+  toggleCommandPalette: () => void;
+  closeCommandPalette: () => void;
+  requestFavouriteLaunch: (favouriteId: string) => void;
+  clearPendingFavouriteLaunch: () => void;
   hydrateFromServer: () => Promise<void>;
 }
 
@@ -59,6 +68,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   editorSyncEnabled: true,
   theme: initialTheme,
   syncToast: null,
+  searchTerminalId: null,
+  commandPaletteOpen: false,
+  pendingFavouriteLaunchId: null,
 
   setFocusedTerminal: (id) => set({ focusedTerminalId: id }),
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
@@ -90,6 +102,13 @@ export const useUIStore = create<UIState>((set, get) => ({
     set({ theme: next });
     persistUI(get);
   },
+
+  openSearch: (terminalId) => set({ searchTerminalId: terminalId }),
+  closeSearch: () => set({ searchTerminalId: null }),
+  toggleCommandPalette: () => set((s) => ({ commandPaletteOpen: !s.commandPaletteOpen })),
+  closeCommandPalette: () => set({ commandPaletteOpen: false }),
+  requestFavouriteLaunch: (favouriteId) => set({ pendingFavouriteLaunchId: favouriteId }),
+  clearPendingFavouriteLaunch: () => set({ pendingFavouriteLaunchId: null }),
 
   showSyncToast: (projectName) => {
     set({ syncToast: { projectName, id: Date.now() } });
