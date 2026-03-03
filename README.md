@@ -26,17 +26,17 @@ paneful --install-app          # Install as a native macOS app
 
 ## Features
 
-### Drag & Drop Projects
+### Split Pane Layouts
 
-Drag a folder from Finder into the sidebar to create a new project with the path pre-filled.
+Five layout presets — columns, rows, main + stack, main + row, and grid. Cycle through them with `Cmd+T` or auto-reorganize with `Cmd+R`.
 
-### Drag Files into Terminals
+### Project Sidebar
 
-Drag files from Finder or your editor (VS Code, Cursor) into a terminal pane to paste their paths as shell-escaped arguments.
+Organize terminals by project. Each project gets its own layout, panes, and working directory. Switch instantly from the sidebar. Drag the right edge to resize — width persists across sessions.
 
-### Favourites
+### Drag & Drop
 
-Save a workspace layout as a favourite — name, layout preset, and per-pane commands. Launch any favourite with a click to instantly recreate the setup. Managed from the star icon in the toolbar and the favourites section in the sidebar.
+Drag folders from Finder into the sidebar to create projects with the path pre-filled. Drag files into terminal panes to paste their paths as shell-escaped arguments.
 
 ### Editor Sync
 
@@ -47,9 +47,13 @@ Requires:
 1. **Paneful** (native app) or **Terminal** (CLI) added to **System Settings > Privacy & Security > Accessibility**
 2. Editor window title includes the folder name (default in VS Code/Cursor)
 
-### Resizable Sidebar
+### Favourites
 
-Drag the right edge of the sidebar to resize it. Width persists across sessions.
+Save a workspace layout as a favourite — name, layout preset, and per-pane commands. Launch any favourite with a click to instantly recreate the setup.
+
+### Dev Server Detection
+
+Automatically detects when a dev server starts in a terminal (Vite, Next.js, Angular, etc.). A green dot appears next to the project name in the sidebar while the port is alive, and disappears when it stops. Tracks ports per-terminal so the same port across different projects is handled correctly.
 
 ### Auto-Reorganize
 
