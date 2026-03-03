@@ -3,6 +3,7 @@ import { Plus, PanelLeftClose, ArrowUpCircle, Lightbulb, MonitorSmartphone, Sun,
 import { useProjectStore } from '../../stores/projectStore';
 import { useLayoutStore } from '../../stores/layoutStore';
 import { useUIStore } from '../../stores/uiStore';
+import { useSessionStore } from '../../stores/sessionStore';
 import { useFavouriteStore, Favourite, TerminalSlot } from '../../stores/favouriteStore';
 import { sendMessage } from '../../hooks/useWebSocket';
 import { setPendingCommand } from '../../hooks/useTerminal';
@@ -51,6 +52,7 @@ export function Sidebar() {
   const toggleEditorSync = useUIStore((s) => s.toggleEditorSync);
   const theme = useUIStore((s) => s.theme);
   const cycleTheme = useUIStore((s) => s.cycleTheme);
+  const activePorts = useSessionStore((s) => s.activePorts);
   const favourites = useFavouriteStore((s) => s.favourites);
   const addFavourite = useFavouriteStore((s) => s.addFavourite);
   const updateFavourite = useFavouriteStore((s) => s.updateFavourite);
@@ -280,6 +282,7 @@ export function Sidebar() {
                 key={project.id}
                 project={project}
                 isActive={project.id === activeProjectId}
+                hasActivePorts={(activePorts[project.id]?.length ?? 0) > 0}
                 onClick={() => setActiveProject(project.id)}
                 onKill={() => handleKill(project.id)}
                 onRemove={() => handleRemove(project.id)}
