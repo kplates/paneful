@@ -1,6 +1,6 @@
 {
   "name": "paneful",
-  "version": "0.8.6",
+  "version": "0.8.7",
   "description": "Browser-based terminal multiplexer with tmux-style pane management",
   "type": "module",
   "bin": {
