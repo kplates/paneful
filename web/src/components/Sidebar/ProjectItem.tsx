@@ -34,9 +34,15 @@ export function ProjectItem({ project, isActive, hasActivePorts, claudeStatus, o
           {project.name}
           {claudeStatus && (
             <span
-              className={`shrink-0 w-1.5 h-1.5 rounded-full bg-orange-500 ${claudeStatus === 'active' ? 'animate-pulse' : ''}`}
-              title={claudeStatus === 'active' ? 'Claude is working' : 'Claude session open'}
-            />
+              className={`shrink-0 text-[8px] font-bold leading-none px-1 py-0.5 rounded ${
+                claudeStatus === 'active'
+                  ? 'bg-purple-500/20 text-purple-400 animate-pulse'
+                  : 'bg-purple-500/10 text-purple-400/50'
+              }`}
+              title={claudeStatus === 'active' ? 'Agent is working' : 'Agent session open'}
+            >
+              AI
+            </span>
           )}
           {hasActivePorts && (
             <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--success)]" title="Dev server running" />
