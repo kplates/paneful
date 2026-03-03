@@ -12,6 +12,7 @@ interface TerminalSession {
 interface SessionState {
   sessions: Record<string, TerminalSession>;
   activePorts: Record<string, number[]>;
+  claudeStatus: Record<string, 'active' | 'idle'>;
 
   createSession: (terminalId: string, projectId: string) => void;
   setTerminalInstance: (terminalId: string, terminal: Terminal) => void;
@@ -21,11 +22,13 @@ interface SessionState {
   getSession: (terminalId: string) => TerminalSession | undefined;
   getProjectSessions: (projectId: string) => TerminalSession[];
   setActivePorts: (ports: Record<string, number[]>) => void;
+  setClaudeStatus: (statuses: Record<string, 'active' | 'idle'>) => void;
 }
 
 export const useSessionStore = create<SessionState>((set, get) => ({
   sessions: {},
   activePorts: {},
+  claudeStatus: {},
 
   createSession: (terminalId, projectId) =>
     set((s) => ({
@@ -83,4 +86,6 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     Object.values(get().sessions).filter((s) => s.projectId === projectId),
 
   setActivePorts: (ports) => set({ activePorts: ports }),
+
+  setClaudeStatus: (statuses) => set({ claudeStatus: statuses }),
 }));

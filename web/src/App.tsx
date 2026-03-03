@@ -64,10 +64,10 @@ export function App() {
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[var(--surface-0)]">
-      <SyncToast />
       <Sidebar />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="relative flex-1 flex flex-col min-w-0">
+        <SyncToast />
         <Toolbar onNewPane={handleNewPane} />
 
         <div className="flex-1 min-h-0 min-w-0">

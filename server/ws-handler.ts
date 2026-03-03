@@ -3,6 +3,7 @@ import type { Server } from 'node:http';
 import { PtyManager } from './pty-manager.js';
 import { ProjectStore, newProject } from './project-store.js';
 import { PortMonitor } from './port-monitor.js';
+import { ClaudeMonitor } from './claude-monitor.js';
 
 // Client → Server
 type ClientMessage =
@@ -21,6 +22,7 @@ type ServerMessage =
   | { type: 'project:spawned'; projectId: string; name: string; cwd: string }
   | { type: 'editor:active'; projectName: string }
   | { type: 'port:status'; ports: Record<string, number[]> }
+  | { type: 'claude:status'; statuses: Record<string, 'active' | 'idle'> }
   | { type: 'error'; message: string };
 
 export interface WsHandlerOptions {
@@ -33,6 +35,7 @@ export class WsHandler {
   private ptyManager: PtyManager;
   private projectStore: ProjectStore;
   private portMonitor: PortMonitor;
+  private claudeMonitor: ClaudeMonitor;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private onIdle?: () => void;
 
@@ -43,6 +46,10 @@ export class WsHandler {
     this.portMonitor = new PortMonitor((ports) => {
       this.send({ type: 'port:status', ports });
     });
+    this.claudeMonitor = new ClaudeMonitor(ptyManager, projectStore, (statuses) => {
+      this.send({ type: 'claude:status', statuses });
+    });
+    this.claudeMonitor.start();
 
     this.wss = new WebSocketServer({ noServer: true });
 
@@ -158,6 +165,7 @@ export class WsHandler {
 
   destroy(): void {
     this.portMonitor.destroy();
+    this.claudeMonitor.destroy();
   }
 
   private handlePtySpawn(terminalId: string, projectId: string, cwd: string): void {

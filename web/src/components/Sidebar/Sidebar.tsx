@@ -53,6 +53,7 @@ export function Sidebar() {
   const theme = useUIStore((s) => s.theme);
   const cycleTheme = useUIStore((s) => s.cycleTheme);
   const activePorts = useSessionStore((s) => s.activePorts);
+  const claudeStatus = useSessionStore((s) => s.claudeStatus);
   const favourites = useFavouriteStore((s) => s.favourites);
   const addFavourite = useFavouriteStore((s) => s.addFavourite);
   const updateFavourite = useFavouriteStore((s) => s.updateFavourite);
@@ -283,6 +284,7 @@ export function Sidebar() {
                 project={project}
                 isActive={project.id === activeProjectId}
                 hasActivePorts={(activePorts[project.id]?.length ?? 0) > 0}
+                claudeStatus={claudeStatus[project.id] ?? null}
                 onClick={() => setActiveProject(project.id)}
                 onKill={() => handleKill(project.id)}
                 onRemove={() => handleRemove(project.id)}
