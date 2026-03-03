@@ -14,4 +14,5 @@ export type ServerMessage =
   | { type: 'pty:exit'; terminalId: string; exitCode: number }
   | { type: 'project:spawned'; projectId: string; name: string; cwd: string }
   | { type: 'editor:active'; projectName: string }
+  | { type: 'port:status'; ports: Record<string, number[]> }
   | { type: 'error'; message: string };

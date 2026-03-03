@@ -2,6 +2,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import type { Server } from 'node:http';
 import { PtyManager } from './pty-manager.js';
 import { ProjectStore, newProject } from './project-store.js';
+import { PortMonitor } from './port-monitor.js';
 
 // Client → Server
 type ClientMessage =
@@ -19,6 +20,7 @@ type ServerMessage =
   | { type: 'pty:exit'; terminalId: string; exitCode: number }
   | { type: 'project:spawned'; projectId: string; name: string; cwd: string }
   | { type: 'editor:active'; projectName: string }
+  | { type: 'port:status'; ports: Record<string, number[]> }
   | { type: 'error'; message: string };
 
 export interface WsHandlerOptions {
@@ -30,6 +32,7 @@ export class WsHandler {
   private client: WebSocket | null = null;
   private ptyManager: PtyManager;
   private projectStore: ProjectStore;
+  private portMonitor: PortMonitor;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private onIdle?: () => void;
 
@@ -37,6 +40,9 @@ export class WsHandler {
     this.ptyManager = ptyManager;
     this.projectStore = projectStore;
     this.onIdle = options?.onIdle;
+    this.portMonitor = new PortMonitor((ports) => {
+      this.send({ type: 'port:status', ports });
+    });
 
     this.wss = new WebSocketServer({ noServer: true });
 
@@ -114,6 +120,7 @@ export class WsHandler {
         break;
 
       case 'pty:kill': {
+        this.portMonitor.removeTerminal(msg.terminalId);
         const projectId = this.ptyManager.kill(msg.terminalId);
         if (projectId) {
           this.projectStore.removeTerminal(projectId, msg.terminalId);
@@ -123,6 +130,7 @@ export class WsHandler {
       }
 
       case 'project:kill': {
+        this.portMonitor.removeProject(msg.projectId);
         const killed = this.ptyManager.killProject(msg.projectId);
         for (const tid of killed) {
           this.send({ type: 'pty:exit', terminalId: tid, exitCode: 0 });
@@ -137,6 +145,7 @@ export class WsHandler {
       }
 
       case 'project:remove': {
+        this.portMonitor.removeProject(msg.projectId);
         const killed = this.ptyManager.killProject(msg.projectId);
         for (const tid of killed) {
           this.send({ type: 'pty:exit', terminalId: tid, exitCode: 0 });
@@ -147,6 +156,10 @@ export class WsHandler {
     }
   }
 
+  destroy(): void {
+    this.portMonitor.destroy();
+  }
+
   private handlePtySpawn(terminalId: string, projectId: string, cwd: string): void {
     try {
       this.ptyManager.spawn(
@@ -155,8 +168,10 @@ export class WsHandler {
         cwd,
         (tid, data) => {
           this.send({ type: 'pty:output', terminalId: tid, data });
+          this.portMonitor.scanOutput(tid, projectId, data);
         },
         (tid, exitCode) => {
+          this.portMonitor.removeTerminal(tid);
           this.send({ type: 'pty:exit', terminalId: tid, exitCode });
         },
       );

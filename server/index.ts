@@ -442,6 +442,7 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
     if (shuttingDown) return;
     shuttingDown = true;
     console.log('Shutting down...');
+    wsHandler.destroy();
     ptyManager.killAll();
     removeLockfile();
     ipcServer.close();

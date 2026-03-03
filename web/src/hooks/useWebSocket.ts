@@ -105,6 +105,12 @@ export function useWebSocket() {
           return;
         }
 
+        // Handle port status updates
+        if (msg.type === 'port:status') {
+          useSessionStore.getState().setActivePorts(msg.ports);
+          return;
+        }
+
         // Handle active editor change (auto-focus project)
         if (msg.type === 'editor:active') {
           if (!useUIStore.getState().editorSyncEnabled) return;
@@ -125,6 +131,7 @@ export function useWebSocket() {
 
     ws.onclose = () => {
       setConnectionStatus('disconnected');
+      useSessionStore.getState().setActivePorts({});
       globalWs = null;
       reconnectTimeout.current = setTimeout(connect, 2000);
     };

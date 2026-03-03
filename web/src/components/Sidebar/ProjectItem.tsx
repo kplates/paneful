@@ -5,12 +5,13 @@ import { Project } from '../../stores/projectStore';
 interface ProjectItemProps {
   project: Project;
   isActive: boolean;
+  hasActivePorts: boolean;
   onClick: () => void;
   onKill: () => void;
   onRemove: () => void;
 }
 
-export function ProjectItem({ project, isActive, onClick, onKill, onRemove }: ProjectItemProps) {
+export function ProjectItem({ project, isActive, hasActivePorts, onClick, onKill, onRemove }: ProjectItemProps) {
   const termCount = project.terminalIds.length;
 
   return (
@@ -28,7 +29,12 @@ export function ProjectItem({ project, isActive, onClick, onKill, onRemove }: Pr
       <Folder size={14} className={isActive ? 'text-accent' : 'text-[var(--text-muted)]'} />
 
       <div className="flex-1 min-w-0">
-        <div className="text-xs font-medium truncate">{project.name}</div>
+        <div className="text-xs font-medium truncate flex items-center gap-1.5">
+          {project.name}
+          {hasActivePorts && (
+            <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--success)]" />
+          )}
+        </div>
         <div className="text-[10px] text-[var(--text-muted)] truncate font-mono">{project.cwd}</div>
       </div>
 
