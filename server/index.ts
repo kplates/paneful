@@ -290,80 +290,6 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
     }
   });
 
-  // Active editor detection — single AppleScript gets frontmost app + window title
-  const editorPatterns = ['cursor', 'code', 'vscode', 'visual studio code', 'zed', 'windsurf', 'electron'];
-  let editorCache: { projectName: string | null; needsAccessibility?: boolean } = { projectName: null };
-
-  const editorScript = `
-    tell application "System Events"
-      set frontApp to name of first application process whose frontmost is true
-      set winTitle to ""
-      tell process frontApp
-        if exists front window then
-          set winTitle to name of front window
-        end if
-      end tell
-      return frontApp & linefeed & winTitle
-    end tell
-  `;
-
-  function pollActiveEditor() {
-    if (process.platform !== 'darwin') return;
-
-    execFile('osascript', ['-e', editorScript], { timeout: 2000 }, (err, stdout, stderr) => {
-      if (err) {
-        const needsAccess = stderr?.includes('not allowed assistive access') || stderr?.includes('1719');
-        editorCache = { projectName: null, needsAccessibility: needsAccess || undefined };
-        return;
-      }
-
-      const lines = stdout.trim().split('\n');
-      const appName = (lines[0] || '').trim();
-      const title = (lines[1] || '').trim();
-
-      const isEditor = editorPatterns.some((pat) => appName.toLowerCase().includes(pat));
-      if (!isEditor || !title) {
-        editorCache = { projectName: null };
-        return;
-      }
-
-      let projectName: string | null = null;
-
-      // Try to extract a path from the title (e.g. "~/Documents/source/foo - branch")
-      const pathMatch = title.match(/^(~?\/[^\s]+)/);
-      if (pathMatch) {
-        const segments = pathMatch[1].replace(/\/$/, '').split('/');
-        projectName = segments[segments.length - 1] || null;
-      }
-
-      // Fallback: default title format "file — project — Editor" or "project — Editor"
-      if (!projectName) {
-        const parts = title.split(' \u2014 ');
-        if (parts.length >= 3) {
-          projectName = parts[parts.length - 2];
-        } else if (parts.length === 2) {
-          projectName = parts[0];
-        } else {
-          projectName = title;
-        }
-      }
-
-      const prev = editorCache.projectName;
-      editorCache = { projectName };
-      if (projectName && projectName !== prev) {
-        wsHandler.send({ type: 'editor:active', projectName });
-      }
-    });
-  }
-
-  // Poll every 500ms — single osascript call is fast
-  pollActiveEditor();
-  setInterval(pollActiveEditor, 500);
-
-  app.get('/api/active-editor', (_req, res) => {
-    res.json(editorCache);
-  });
-
   // Resolve a dropped file's full path using OS file index (Spotlight on macOS)
   app.post('/api/resolve-path', (req, res) => {
     const { name, size, lastModified } = req.body;
@@ -437,6 +363,10 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
 
   // WebSocket handler
   const wsHandler = new WsHandler(server, ptyManager, projectStore, { onIdle: () => shutdown() });
+
+  app.get('/api/active-editor', (_req, res) => {
+    res.json(wsHandler.getEditorState());
+  });
 
   // IPC listener
   const ipcServer = startIpcListener(socketPath(), ptyManager, projectStore, wsHandler);

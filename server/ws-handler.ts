@@ -5,6 +5,7 @@ import { ProjectStore, newProject } from './project-store.js';
 import { PortMonitor } from './port-monitor.js';
 import { ClaudeMonitor } from './claude-monitor.js';
 import { GitMonitor } from './git-monitor.js';
+import { EditorMonitor } from './editor-monitor.js';
 
 // Client → Server
 type ClientMessage =
@@ -39,6 +40,7 @@ export class WsHandler {
   private portMonitor: PortMonitor;
   private claudeMonitor: ClaudeMonitor;
   private gitMonitor: GitMonitor;
+  private editorMonitor: EditorMonitor;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private onIdle?: () => void;
 
@@ -52,9 +54,11 @@ export class WsHandler {
     this.claudeMonitor = new ClaudeMonitor(ptyManager, (statuses) => {
       this.send({ type: 'claude:status', statuses });
     });
-    this.claudeMonitor.start();
     this.gitMonitor = new GitMonitor(projectStore, (branches) => {
       this.send({ type: 'git:branch', branches });
+    });
+    this.editorMonitor = new EditorMonitor((projectName) => {
+      this.send({ type: 'editor:active', projectName });
     });
 
     this.wss = new WebSocketServer({ noServer: true });
@@ -77,10 +81,25 @@ export class WsHandler {
       }
       console.log('WebSocket client connected');
 
-      // Send current git branch state to newly connected client
+      // Resume all monitors when a client connects
+      this.resumeMonitors();
+
+      // Send cached state to newly connected client
       const branches = this.gitMonitor.getBranches();
       if (Object.keys(branches).length > 0) {
         this.send({ type: 'git:branch', branches });
+      }
+      const ports = this.portMonitor.getPortStatus();
+      if (Object.keys(ports).length > 0) {
+        this.send({ type: 'port:status', ports });
+      }
+      const statuses = this.claudeMonitor.getStatuses();
+      if (Object.keys(statuses).length > 0) {
+        this.send({ type: 'claude:status', statuses });
+      }
+      const editorState = this.editorMonitor.getState();
+      if (editorState.projectName) {
+        this.send({ type: 'editor:active', projectName: editorState.projectName });
       }
 
       ws.on('message', (raw) => {
@@ -95,12 +114,14 @@ export class WsHandler {
       ws.on('close', () => {
         console.log('WebSocket client disconnected');
         this.client = null;
+        this.pauseMonitors();
         this.startIdleTimer();
       });
 
       ws.on('error', (err) => {
         console.error('WebSocket error:', err.message);
         this.client = null;
+        this.pauseMonitors();
         this.startIdleTimer();
       });
     });
@@ -176,10 +197,29 @@ export class WsHandler {
     }
   }
 
+  getEditorState(): { projectName: string | null; needsAccessibility?: boolean } {
+    return this.editorMonitor.getState();
+  }
+
+  private resumeMonitors(): void {
+    this.portMonitor.resume();
+    this.claudeMonitor.resume();
+    this.gitMonitor.resume();
+    this.editorMonitor.resume();
+  }
+
+  private pauseMonitors(): void {
+    this.portMonitor.pause();
+    this.claudeMonitor.pause();
+    this.gitMonitor.pause();
+    this.editorMonitor.pause();
+  }
+
   destroy(): void {
     this.portMonitor.destroy();
     this.claudeMonitor.destroy();
     this.gitMonitor.destroy();
+    this.editorMonitor.destroy();
   }
 
   private handlePtySpawn(terminalId: string, projectId: string, cwd: string): void {

@@ -21,8 +21,25 @@ export class ClaudeMonitor {
     this.onChange = onChange;
   }
 
-  start(): void {
+  resume(): void {
+    if (this.destroyed || this.pollTimer) return;
     this.pollTimer = setInterval(() => this.poll(), 3000);
+  }
+
+  pause(): void {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
+  getStatuses(): Record<string, 'active' | 'idle'> {
+    return { ...this.prevStatuses };
+  }
+
+  /** @deprecated Use resume() instead */
+  start(): void {
+    this.resume();
   }
 
   /** Call from the PTY output path to record activity. */

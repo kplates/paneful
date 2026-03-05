@@ -20,10 +20,33 @@ export class PortMonitor {
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private onChange: (ports: Record<string, number[]>) => void;
   private destroyed = false;
+  private polling = false;
+  private paused = true;
 
   constructor(onChange: (ports: Record<string, number[]>) => void) {
     this.onChange = onChange;
+  }
+
+  resume(): void {
+    if (this.destroyed || !this.paused) return;
+    this.paused = false;
     this.pollTimer = setInterval(() => this.poll(), 5000);
+  }
+
+  pause(): void {
+    this.paused = true;
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
+  getPortStatus(): Record<string, number[]> {
+    const result: Record<string, number[]> = {};
+    for (const [pid, ports] of this.alivePorts) {
+      result[pid] = [...ports];
+    }
+    return result;
   }
 
   scanOutput(terminalId: string, projectId: string, data: string): void {
@@ -73,7 +96,7 @@ export class PortMonitor {
       }
     }
 
-    if (found) {
+    if (found && !this.paused) {
       this.poll();
     }
   }
@@ -109,6 +132,16 @@ export class PortMonitor {
   }
 
   private async poll(): Promise<void> {
+    if (this.destroyed || this.polling) return;
+    this.polling = true;
+    try {
+      await this.doPoll();
+    } finally {
+      this.polling = false;
+    }
+  }
+
+  private async doPoll(): Promise<void> {
     if (this.destroyed) return;
 
     // Build projectId → Set<port> from all terminals
@@ -150,7 +183,7 @@ export class PortMonitor {
                   resolve();
                 }
               });
-              sock.setTimeout(2000, () => {
+              sock.setTimeout(500, () => {
                 sock.destroy();
                 if (fallback) {
                   tryConnect(fallback);
