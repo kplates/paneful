@@ -23,6 +23,9 @@ const terminalElements = new Map<string, HTMLElement>();
 // Search addons per terminal (persists across remounts with the terminal instance)
 const searchAddons = new Map<string, SearchAddon>();
 
+// FitAddon instances per terminal (reused across remounts to avoid accumulation)
+const fitAddons = new Map<string, FitAddon>();
+
 export function getSearchAddon(terminalId: string): SearchAddon | undefined {
   return searchAddons.get(terminalId);
 }
@@ -80,9 +83,13 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
       // Move the xterm DOM element to the new container
       container.appendChild(existingElement);
 
-      // Re-create FitAddon (old one is tied to old layout dimensions)
-      const fitAddon = new FitAddon();
-      term.loadAddon(fitAddon);
+      // Reuse existing FitAddon (creating a new one each remount leaks)
+      let fitAddon = fitAddons.get(terminalId);
+      if (!fitAddon) {
+        fitAddon = new FitAddon();
+        term.loadAddon(fitAddon);
+        fitAddons.set(terminalId, fitAddon);
+      }
       fitAddonRef.current = fitAddon;
 
       requestAnimationFrame(() => {
@@ -125,6 +132,7 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
     term.loadAddon(searchAddon);
     term.open(container);
 
+    fitAddons.set(terminalId, fitAddon);
     searchAddons.set(terminalId, searchAddon);
 
     terminalRef.current = term;
@@ -283,5 +291,6 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
 export function cleanupTerminal(terminalId: string) {
   spawnedTerminals.delete(terminalId);
   terminalElements.delete(terminalId);
+  fitAddons.delete(terminalId);
   searchAddons.delete(terminalId);
 }

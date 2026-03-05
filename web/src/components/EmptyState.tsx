@@ -46,6 +46,7 @@ export function EmptyState({ onNewTerminal, projectName }: EmptyStateProps) {
   const favourites = useFavouriteStore((s) => s.favourites);
   const favouriteList = Object.values(favourites);
 
+
   return (
     <div className="h-full w-full flex items-center justify-center bg-[var(--surface-0)]">
       <div className="flex flex-col items-center gap-8 text-center max-w-md px-8">

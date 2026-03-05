@@ -7,12 +7,26 @@ export class GitMonitor {
   private branches = new Map<string, string | null>();
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private destroyed = false;
+  private polling = false;
 
   constructor(projectStore: ProjectStore, onChange: (branches: Record<string, string | null>) => void) {
     this.projectStore = projectStore;
     this.onChange = onChange;
+    // Initial poll to have data ready for first client connection
+    this.poll();
+  }
+
+  resume(): void {
+    if (this.destroyed || this.pollTimer) return;
     this.poll();
     this.pollTimer = setInterval(() => this.poll(), 10_000);
+  }
+
+  pause(): void {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
   }
 
   getBranches(): Record<string, string | null> {
@@ -33,6 +47,16 @@ export class GitMonitor {
   }
 
   private async poll(): Promise<void> {
+    if (this.destroyed || this.polling) return;
+    this.polling = true;
+    try {
+      await this.doPoll();
+    } finally {
+      this.polling = false;
+    }
+  }
+
+  private async doPoll(): Promise<void> {
     if (this.destroyed) return;
 
     const projects = this.projectStore.list();

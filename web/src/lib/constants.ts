@@ -1,6 +1,6 @@
 export const MIN_PANE_RATIO = 0.1;
 export const MAX_PANE_RATIO = 0.9;
-export const RESIZE_DEBOUNCE_MS = 16;
+export const RESIZE_DEBOUNCE_MS = 50;
 export const DEFAULT_COLS = 80;
 export const DEFAULT_ROWS = 24;
 
