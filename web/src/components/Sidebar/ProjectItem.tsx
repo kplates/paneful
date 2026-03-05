@@ -20,10 +20,10 @@ export function ProjectItem({ project, isActive, hasActivePorts, claudeStatus, g
     <div
       onClick={onClick}
       className={`
-        group flex items-center gap-2 px-3 py-2 mx-2 rounded-lg cursor-pointer
+        group flex items-center gap-2 px-3 py-2 mx-2 mb-1 rounded-lg cursor-pointer
         transition-colors duration-100
         ${isActive
-          ? 'bg-accent/10 text-[var(--text-primary)]'
+          ? 'bg-[var(--surface-2)] text-[var(--text-primary)]'
           : 'text-[var(--text-secondary)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]'
         }
       `}
