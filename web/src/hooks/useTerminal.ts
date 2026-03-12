@@ -240,6 +240,9 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
       }
     };
 
+    // Apply current theme on mount — terminal may have been created under a different theme
+    applyTheme();
+
     let prev = useUIStore.getState().theme;
     const unsub = useUIStore.subscribe((s) => {
       if (s.theme !== prev) {

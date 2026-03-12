@@ -53,6 +53,12 @@ export function useKeyboardShortcuts() {
         const adjacent = getAdjacentTerminal(layout, focusedId, dir as 'left' | 'right' | 'up' | 'down');
         if (adjacent) {
           useLayoutStore.getState().swapPanesInProject(activeProjectId, focusedId, adjacent);
+          // Re-focus after React re-renders the swapped layout
+          requestAnimationFrame(() => {
+            setFocusedTerminal(focusedId);
+            const session = useSessionStore.getState().sessions[focusedId];
+            session?.terminal?.focus();
+          });
         }
         return;
       }
