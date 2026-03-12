@@ -49,8 +49,18 @@ interface UIState {
   hydrateFromServer: () => Promise<void>;
 }
 
-// Fast-render cache: read theme from localStorage to prevent flash
-const initialTheme = (localStorage.getItem('paneful:theme') as ThemePreference) || 'system';
+// Fast-render cache: use cookies (shared across ports) to prevent flash on restart.
+// localStorage is per-origin (includes port), so it's empty when Paneful picks a new port.
+function getThemeCookie(): ThemePreference {
+  const match = document.cookie.match(/(?:^|; )paneful_theme=(system|dark|light)/);
+  return (match?.[1] as ThemePreference) ?? 'system';
+}
+
+function setThemeCookie(theme: ThemePreference) {
+  document.cookie = `paneful_theme=${theme};path=/;max-age=31536000;SameSite=Lax`;
+}
+
+const initialTheme = getThemeCookie();
 applyThemeAttribute(initialTheme);
 
 function persistUI(get: () => UIState) {
@@ -88,7 +98,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     persistUI(get);
   },
   setTheme: (theme) => {
-    localStorage.setItem('paneful:theme', theme);
+    setThemeCookie(theme);
     applyThemeAttribute(theme);
     set({ theme });
     persistUI(get);
@@ -97,7 +107,7 @@ export const useUIStore = create<UIState>((set, get) => ({
     const order: ThemePreference[] = ['system', 'light', 'dark'];
     const current = get().theme;
     const next = order[(order.indexOf(current) + 1) % order.length];
-    localStorage.setItem('paneful:theme', next);
+    setThemeCookie(next);
     applyThemeAttribute(next);
     set({ theme: next });
     persistUI(get);
@@ -122,7 +132,7 @@ export const useUIStore = create<UIState>((set, get) => ({
       if (settings.ui) {
         const { theme, sidebarWidth, editorSyncEnabled } = settings.ui;
         if (theme) {
-          localStorage.setItem('paneful:theme', theme);
+          setThemeCookie(theme);
           applyThemeAttribute(theme);
         }
         set({

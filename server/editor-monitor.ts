@@ -61,9 +61,7 @@ func log(_ msg: String) {
 var lastOutput = ""
 var currentPid: pid_t = 0
 var currentAppName = ""
-var axObserver: AXObserver?
-var observedWindow: AXUIElement?
-var fallbackTimer: Timer?
+var pollTimer: Timer?
 
 func emit(_ appName: String, _ title: String, source: String) {
     let output = "\\(appName)\\t\\(title)"
@@ -78,69 +76,18 @@ func emitCurrentTitle(source: String) {
     emit(currentAppName, title, source: source)
 }
 
-let axCallback: AXObserverCallback = { _, _, notification, _ in
-    let name = notification as String
-    if name == (kAXFocusedWindowChangedNotification as String) {
-        log("AX: focused window changed")
-        observeFocusedWindowTitle()
-        emitCurrentTitle(source: "ax-window-change")
-    } else if name == (kAXTitleChangedNotification as String) {
-        log("AX: title changed")
-        emitCurrentTitle(source: "ax-title-change")
-    } else {
-        emitCurrentTitle(source: "ax-\\(name)")
-    }
-}
-
-func observeFocusedWindowTitle() {
-    guard let obs = axObserver else { return }
-    if let old = observedWindow {
-        AXObserverRemoveNotification(obs, old, kAXTitleChangedNotification as CFString)
-        observedWindow = nil
-    }
-    let app = AXUIElementCreateApplication(currentPid)
-    var winValue: AnyObject?
-    guard AXUIElementCopyAttributeValue(app, kAXFocusedWindowAttribute as CFString, &winValue) == .success else { return }
-    let window = winValue as! AXUIElement
-    AXObserverAddNotification(obs, window, kAXTitleChangedNotification as CFString, nil)
-    observedWindow = window
-}
-
-func startObserving(pid: pid_t) {
-    stopObserving()
+func startPolling(pid: pid_t) {
+    stopPolling()
     emitCurrentTitle(source: "editor-activated")
-
-    var observer: AXObserver?
-    guard AXObserverCreate(pid, axCallback, &observer) == .success, let obs = observer else {
-        log("AXObserver failed for pid \\(pid), using poll fallback")
-        fallbackTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            emitCurrentTitle(source: "poll")
-        }
-        return
-    }
-
-    let appElement = AXUIElementCreateApplication(pid)
-    AXObserverAddNotification(obs, appElement, kAXFocusedWindowChangedNotification as CFString, nil)
-    CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(obs), .defaultMode)
-    axObserver = obs
-    observeFocusedWindowTitle()
-    log("AXObserver active for pid \\(pid)")
-
-    // AX notifications don't fire for Electron apps (Cursor, VS Code, etc.)
-    // so this timer is the primary mechanism for those editors
-    fallbackTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+    log("polling title for pid \\(pid)")
+    pollTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
         emitCurrentTitle(source: "poll")
     }
 }
 
-func stopObserving() {
-    if let obs = axObserver {
-        CFRunLoopRemoveSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(obs), .defaultMode)
-        axObserver = nil
-        observedWindow = nil
-    }
-    fallbackTimer?.invalidate()
-    fallbackTimer = nil
+func stopPolling() {
+    pollTimer?.invalidate()
+    pollTimer = nil
 }
 
 let nc = NSWorkspace.shared.notificationCenter
@@ -151,9 +98,9 @@ nc.addObserver(forName: NSWorkspace.didActivateApplicationNotification, object: 
     currentAppName = name
     currentPid = app.processIdentifier
     if isEditor(name) {
-        startObserving(pid: currentPid)
+        startPolling(pid: currentPid)
     } else {
-        stopObserving()
+        stopPolling()
         emit(name, "", source: "app-switch")
     }
 }
@@ -163,7 +110,7 @@ if let front = NSWorkspace.shared.frontmostApplication, let name = front.localiz
     currentAppName = name
     currentPid = front.processIdentifier
     if isEditor(name) {
-        startObserving(pid: currentPid)
+        startPolling(pid: currentPid)
     } else {
         emit(name, "", source: "seed")
     }

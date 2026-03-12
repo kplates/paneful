@@ -42,9 +42,9 @@ export function SyncToast() {
         gap: 8,
         padding: '8px 14px',
         borderRadius: 8,
-        background: 'var(--surface-2)',
-        color: 'var(--text-primary)',
-        border: '1px solid var(--border)',
+        background: '#facc15',
+        color: '#1a1a1a',
+        border: '1px solid #eab308',
         fontSize: 13,
         cursor: 'pointer',
         boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
@@ -54,7 +54,7 @@ export function SyncToast() {
         pointerEvents: visible ? 'auto' : 'none',
       }}
     >
-      <MonitorSmartphone size={15} style={{ color: 'var(--accent)', flexShrink: 0 }} />
+      <MonitorSmartphone size={15} style={{ color: '#a16207', flexShrink: 0 }} />
       <span>
         Synced to <strong>{syncToast.projectName}</strong>
       </span>

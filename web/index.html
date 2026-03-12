@@ -10,7 +10,8 @@
     <title>Paneful</title>
     <script>
       (function() {
-        var t = localStorage.getItem('paneful:theme') || 'system';
+        var m = document.cookie.match(/(?:^|; )paneful_theme=(system|dark|light)/);
+        var t = m ? m[1] : 'system';
         document.documentElement.setAttribute('data-theme', t);
       })();
     </script>
