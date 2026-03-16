@@ -1,19 +1,20 @@
 import React from 'react';
 import { Folder, Trash2, XCircle, Terminal, GitBranch } from 'lucide-react';
 import { Project } from '../../stores/projectStore';
+import type { GitStatus } from '../../stores/sessionStore';
 
 interface ProjectItemProps {
   project: Project;
   isActive: boolean;
   hasActivePorts: boolean;
   claudeStatus: 'active' | 'idle' | null;
-  gitBranch: string | null;
+  gitStatus: GitStatus | null;
   onClick: () => void;
   onKill: () => void;
   onRemove: () => void;
 }
 
-export function ProjectItem({ project, isActive, hasActivePorts, claudeStatus, gitBranch, onClick, onKill, onRemove }: ProjectItemProps) {
+export function ProjectItem({ project, isActive, hasActivePorts, claudeStatus, gitStatus, onClick, onKill, onRemove }: ProjectItemProps) {
   const termCount = project.terminalIds.length;
 
   return (
@@ -49,12 +50,32 @@ export function ProjectItem({ project, isActive, hasActivePorts, claudeStatus, g
             <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--success)]" title="Dev server running" />
           )}
         </div>
-        {gitBranch && (
-          <div className="flex items-center gap-0.5">
+        {gitStatus && (
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span className="inline-flex items-center gap-0.5 px-1 py-0 rounded bg-[var(--surface-3)] text-[var(--text-muted)] text-[10px] font-medium truncate max-w-full">
               <GitBranch size={8} className="shrink-0" />
-              <span className="truncate">{gitBranch}</span>
+              <span className="truncate">{gitStatus.branch}</span>
             </span>
+            {gitStatus.ahead > 0 && (
+              <span className="inline-flex items-center gap-0.5 px-1 py-0 rounded bg-[var(--surface-3)] text-[10px] text-[var(--text-muted)]" title={`${gitStatus.ahead} ahead`}>
+                ↑{gitStatus.ahead}
+              </span>
+            )}
+            {gitStatus.behind > 0 && (
+              <span className="inline-flex items-center gap-0.5 px-1 py-0 rounded bg-[var(--surface-3)] text-[10px] text-[var(--text-muted)]" title={`${gitStatus.behind} behind`}>
+                ↓{gitStatus.behind}
+              </span>
+            )}
+            {gitStatus.staged > 0 && (
+              <span className="inline-flex items-center gap-0.5 px-1 py-0 rounded bg-[var(--surface-3)] text-[10px] text-[var(--text-muted)]" title={`${gitStatus.staged} staged`}>
+                + {gitStatus.staged}
+              </span>
+            )}
+            {gitStatus.modified > 0 && (
+              <span className="inline-flex items-center gap-0.5 px-1 py-0 rounded bg-[var(--surface-3)] text-[10px] text-[var(--text-muted)]" title={`${gitStatus.modified} modified`}>
+                <span className="text-[5px]">●</span> {gitStatus.modified}
+              </span>
+            )}
           </div>
         )}
         <div className="text-[10px] text-[var(--text-muted)] truncate font-mono">{project.cwd}</div>

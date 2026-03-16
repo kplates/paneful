@@ -1,6 +1,14 @@
 import { create } from 'zustand';
 import { Terminal } from '@xterm/xterm';
 
+export interface GitStatus {
+  branch: string;
+  staged: number;
+  modified: number;
+  ahead: number;
+  behind: number;
+}
+
 interface TerminalSession {
   terminalId: string;
   projectId: string;
@@ -13,7 +21,7 @@ interface SessionState {
   sessions: Record<string, TerminalSession>;
   activePorts: Record<string, number[]>;
   claudeStatus: Record<string, 'active' | 'idle'>;
-  gitBranches: Record<string, string | null>;
+  gitBranches: Record<string, GitStatus | null>;
 
   createSession: (terminalId: string, projectId: string) => void;
   setTerminalInstance: (terminalId: string, terminal: Terminal) => void;
@@ -24,7 +32,7 @@ interface SessionState {
   getProjectSessions: (projectId: string) => TerminalSession[];
   setActivePorts: (ports: Record<string, number[]>) => void;
   setClaudeStatus: (statuses: Record<string, 'active' | 'idle'>) => void;
-  setGitBranches: (branches: Record<string, string | null>) => void;
+  setGitBranches: (branches: Record<string, GitStatus | null>) => void;
 }
 
 export const useSessionStore = create<SessionState>((set, get) => ({

@@ -342,7 +342,7 @@ export function Sidebar() {
                 isActive={project.id === activeProjectId}
                 hasActivePorts={(activePorts[project.id]?.length ?? 0) > 0}
                 claudeStatus={claudeStatus[project.id] ?? null}
-                gitBranch={gitBranches[project.id] ?? null}
+                gitStatus={gitBranches[project.id] ?? null}
                 onClick={() => setActiveProject(project.id)}
                 onKill={() => handleKill(project.id)}
                 onRemove={() => handleRemove(project.id)}

@@ -16,5 +16,5 @@ export type ServerMessage =
   | { type: 'editor:active'; projectName: string }
   | { type: 'port:status'; ports: Record<string, number[]> }
   | { type: 'claude:status'; statuses: Record<string, 'active' | 'idle'> }
-  | { type: 'git:branch'; branches: Record<string, string | null> }
+  | { type: 'git:branch'; branches: Record<string, { branch: string; staged: number; modified: number; ahead: number; behind: number } | null> }
   | { type: 'error'; message: string };

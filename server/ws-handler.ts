@@ -4,7 +4,7 @@ import { PtyManager } from './pty-manager.js';
 import { ProjectStore, newProject } from './project-store.js';
 import { PortMonitor } from './port-monitor.js';
 import { ClaudeMonitor } from './claude-monitor.js';
-import { GitMonitor } from './git-monitor.js';
+import { GitMonitor, type GitStatus } from './git-monitor.js';
 import { EditorMonitor } from './editor-monitor.js';
 
 // Client → Server
@@ -25,7 +25,7 @@ type ServerMessage =
   | { type: 'editor:active'; projectName: string }
   | { type: 'port:status'; ports: Record<string, number[]> }
   | { type: 'claude:status'; statuses: Record<string, 'active' | 'idle'> }
-  | { type: 'git:branch'; branches: Record<string, string | null> }
+  | { type: 'git:branch'; branches: Record<string, GitStatus | null> }
   | { type: 'error'; message: string };
 
 export interface WsHandlerOptions {
