@@ -19,12 +19,9 @@ interface TerminalPaneProps {
 }
 
 export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) {
-  const focusedTerminalId = useUIStore((s) => s.focusedTerminalId);
-  const draggingTerminalId = useUIStore((s) => s.draggingTerminalId);
-  const searchTerminalId = useUIStore((s) => s.searchTerminalId);
-  const isFocused = focusedTerminalId === terminalId;
-  const isDragging = draggingTerminalId === terminalId;
-  const isSearchOpen = searchTerminalId === terminalId;
+  const isFocused = useUIStore((s) => s.focusedTerminalId === terminalId);
+  const isDragging = useUIStore((s) => s.draggingTerminalId === terminalId);
+  const isSearchOpen = useUIStore((s) => s.searchTerminalId === terminalId);
 
   const { containerRef, fit, focus } = useTerminal({ terminalId, projectId, cwd });
   const dragProps = usePaneDrag(terminalId, projectId);

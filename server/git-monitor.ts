@@ -27,7 +27,7 @@ export class GitMonitor {
   resume(): void {
     if (this.destroyed || this.pollTimer) return;
     this.poll();
-    this.pollTimer = setInterval(() => this.poll(), 10_000);
+    this.pollTimer = setInterval(() => this.poll(), 15_000);
   }
 
   pause(): void {

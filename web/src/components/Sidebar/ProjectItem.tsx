@@ -14,7 +14,7 @@ interface ProjectItemProps {
   onRemove: () => void;
 }
 
-export function ProjectItem({ project, isActive, hasActivePorts, claudeStatus, gitStatus, onClick, onKill, onRemove }: ProjectItemProps) {
+export const ProjectItem = React.memo(function ProjectItem({ project, isActive, hasActivePorts, claudeStatus, gitStatus, onClick, onKill, onRemove }: ProjectItemProps) {
   const termCount = project.terminalIds.length;
 
   return (
@@ -108,4 +108,4 @@ export function ProjectItem({ project, isActive, hasActivePorts, claudeStatus, g
       </div>
     </div>
   );
-}
+});

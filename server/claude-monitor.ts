@@ -23,7 +23,7 @@ export class ClaudeMonitor {
 
   resume(): void {
     if (this.destroyed || this.pollTimer) return;
-    this.pollTimer = setInterval(() => this.poll(), 3000);
+    this.pollTimer = setInterval(() => this.poll(), 5000);
   }
 
   pause(): void {

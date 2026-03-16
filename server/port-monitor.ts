@@ -18,6 +18,7 @@ export class PortMonitor {
   private terminals = new Map<string, TerminalInfo>();
   private alivePorts = new Map<string, Set<number>>(); // projectId → alive ports
   private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private immediatePollTimer: ReturnType<typeof setTimeout> | null = null;
   private onChange: (ports: Record<string, number[]>) => void;
   private destroyed = false;
   private polling = false;
@@ -30,7 +31,7 @@ export class PortMonitor {
   resume(): void {
     if (this.destroyed || !this.paused) return;
     this.paused = false;
-    this.pollTimer = setInterval(() => this.poll(), 5000);
+    this.pollTimer = setInterval(() => this.poll(), 10_000);
   }
 
   pause(): void {
@@ -38,6 +39,10 @@ export class PortMonitor {
     if (this.pollTimer) {
       clearInterval(this.pollTimer);
       this.pollTimer = null;
+    }
+    if (this.immediatePollTimer) {
+      clearTimeout(this.immediatePollTimer);
+      this.immediatePollTimer = null;
     }
   }
 
@@ -97,7 +102,8 @@ export class PortMonitor {
     }
 
     if (found && !this.paused) {
-      this.poll();
+      if (this.immediatePollTimer) clearTimeout(this.immediatePollTimer);
+      this.immediatePollTimer = setTimeout(() => this.poll(), 500);
     }
   }
 
@@ -126,6 +132,10 @@ export class PortMonitor {
     if (this.pollTimer) {
       clearInterval(this.pollTimer);
       this.pollTimer = null;
+    }
+    if (this.immediatePollTimer) {
+      clearTimeout(this.immediatePollTimer);
+      this.immediatePollTimer = null;
     }
     this.terminals.clear();
     this.alivePorts.clear();

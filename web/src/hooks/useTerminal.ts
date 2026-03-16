@@ -26,6 +26,34 @@ const searchAddons = new Map<string, SearchAddon>();
 // FitAddon instances per terminal (reused across remounts to avoid accumulation)
 const fitAddons = new Map<string, FitAddon>();
 
+// Global terminal registry for theme updates — avoids per-terminal store subscriptions
+const terminalRegistry = new Map<string, Terminal>();
+
+function applyThemeToTerminal(term: Terminal) {
+  const isLight = getResolvedTheme(useUIStore.getState().theme) === 'light';
+  term.options.theme = getCurrentXtermTheme();
+  term.options.minimumContrastRatio = isLight ? 7 : 1;
+}
+
+// Single global listener: when theme pref changes, update all registered terminals
+let _prevTheme = useUIStore.getState().theme;
+useUIStore.subscribe((s) => {
+  if (s.theme !== _prevTheme) {
+    _prevTheme = s.theme;
+    for (const term of terminalRegistry.values()) {
+      applyThemeToTerminal(term);
+    }
+  }
+});
+
+export function registerTerminal(id: string, term: Terminal) {
+  terminalRegistry.set(id, term);
+}
+
+export function unregisterTerminal(id: string) {
+  terminalRegistry.delete(id);
+}
+
 export function getSearchAddon(terminalId: string): SearchAddon | undefined {
   return searchAddons.get(terminalId);
 }
@@ -229,39 +257,25 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
     };
   }, [terminalId, projectId, cwd, createSession, setTerminalInstance]);
 
-  // Re-theme terminal when theme preference changes or system preference changes
+  // Register terminal in global registry for theme updates, apply theme on mount
   useEffect(() => {
-    const applyTheme = () => {
-      const term = terminalRef.current;
-      if (term) {
-        const isLight = getResolvedTheme(useUIStore.getState().theme) === 'light';
-        term.options.theme = getCurrentXtermTheme();
-        term.options.minimumContrastRatio = isLight ? 7 : 1;
-      }
-    };
-
-    // Apply current theme on mount — terminal may have been created under a different theme
-    applyTheme();
-
-    let prev = useUIStore.getState().theme;
-    const unsub = useUIStore.subscribe((s) => {
-      if (s.theme !== prev) {
-        prev = s.theme;
-        applyTheme();
-      }
-    });
+    const term = terminalRef.current;
+    if (term) {
+      applyThemeToTerminal(term);
+      registerTerminal(terminalId, term);
+    }
 
     const mql = window.matchMedia('(prefers-color-scheme: light)');
     const onSystemChange = () => {
-      if (useUIStore.getState().theme === 'system') applyTheme();
+      if (term && useUIStore.getState().theme === 'system') applyThemeToTerminal(term);
     };
     mql.addEventListener('change', onSystemChange);
 
     return () => {
-      unsub();
+      unregisterTerminal(terminalId);
       mql.removeEventListener('change', onSystemChange);
     };
-  }, []);
+  }, [terminalId]);
 
   const fit = useCallback(() => {
     const fitAddon = fitAddonRef.current;
@@ -296,4 +310,5 @@ export function cleanupTerminal(terminalId: string) {
   terminalElements.delete(terminalId);
   fitAddons.delete(terminalId);
   searchAddons.delete(terminalId);
+  terminalRegistry.delete(terminalId);
 }

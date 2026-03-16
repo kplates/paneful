@@ -211,7 +211,7 @@ export function Sidebar() {
     e.preventDefault();
     isResizing.current = true;
     const onMouseMove = (ev: MouseEvent) => {
-      setSidebarWidth(ev.clientX);
+      requestAnimationFrame(() => setSidebarWidth(ev.clientX));
     };
     const onMouseUp = () => {
       isResizing.current = false;
