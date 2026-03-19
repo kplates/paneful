@@ -8,6 +8,7 @@ import { useProjectStore } from '../../stores/projectStore';
 import { useSessionStore } from '../../stores/sessionStore';
 import { sendMessage } from '../../hooks/useWebSocket';
 import { getTerminalIds } from '../../lib/layout-engine';
+import { consumeNativeDropPaths, extractDropPaths, escapeShellPath } from '../../lib/native-drop';
 import { PaneHeader } from './PaneHeader';
 import { SearchBar } from './SearchBar';
 import { DropIndicator } from './DropIndicator';
@@ -42,29 +43,22 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
   }, [terminalId, projectId]);
 
   const handleFileDrop = useCallback((e: React.DragEvent) => {
-    // Skip if this is an internal pane drag (reorder)
     const isInternalDrag = useUIStore.getState().draggingTerminalId != null;
 
-    // VS Code/Cursor drops: path in text/plain or codefiles, no Files
-    if (!isInternalDrag && (e.dataTransfer.types.includes('codefiles') || e.dataTransfer.types.includes('text/plain'))) {
-      const codefiles = e.dataTransfer.getData('codefiles');
-      let paths: string[] = [];
-      if (codefiles) {
-        try { paths = JSON.parse(codefiles); } catch { /* ignore */ }
-      }
-      if (paths.length === 0) {
-        const plain = e.dataTransfer.getData('text/plain').trim();
-        if (plain && plain.startsWith('/')) {
-          paths = plain.split('\n').map((p) => p.trim()).filter(Boolean);
-        }
-      }
-      if (paths.length > 0 && !e.dataTransfer.types.includes('Files')) {
+    if (!isInternalDrag) {
+      const nativePaths = consumeNativeDropPaths();
+      if (nativePaths) {
         e.preventDefault();
         e.stopPropagation();
-        const escaped = paths.map((p) =>
-          /[ ()'"]/.test(p) ? `'${p.replace(/'/g, "'\\''")}'` : p
-        );
-        sendMessage({ type: 'pty:input', terminalId, data: escaped.join(' ') });
+        sendMessage({ type: 'pty:input', terminalId, data: nativePaths.map(escapeShellPath).join(' ') });
+        focus();
+        return;
+      }
+      const extracted = extractDropPaths(e.dataTransfer);
+      if (extracted.length > 0) {
+        e.preventDefault();
+        e.stopPropagation();
+        sendMessage({ type: 'pty:input', terminalId, data: extracted.map(escapeShellPath).join(' ') });
         focus();
         return;
       }
@@ -73,15 +67,13 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
     if (e.dataTransfer.types.includes('Files') && e.dataTransfer.files.length > 0) {
       e.preventDefault();
       e.stopPropagation();
-
-      // Resolve each file's full path via the server (uses Spotlight/locate)
       const files = Array.from(e.dataTransfer.files);
       Promise.all(
         files.map((f) =>
           fetch('/api/resolve-path', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: f.name, size: f.size, lastModified: f.lastModified }),
+            body: JSON.stringify({ name: f.name, size: f.size, lastModified: f.lastModified, cwd }),
           })
             .then((r) => r.json())
             .then((r: { path: string | null }) => r.path)
@@ -90,10 +82,7 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
       ).then((paths) => {
         const resolved = paths.filter(Boolean) as string[];
         if (resolved.length > 0) {
-          const escaped = resolved.map((p) =>
-            /[ ()'"]/.test(p) ? `'${p.replace(/'/g, "'\\''")}'` : p
-          );
-          sendMessage({ type: 'pty:input', terminalId, data: escaped.join(' ') });
+          sendMessage({ type: 'pty:input', terminalId, data: resolved.map(escapeShellPath).join(' ') });
           focus();
         }
       });
@@ -103,20 +92,17 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
   }, [terminalId, dragProps, focus]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
-    // Internal pane drag (reorder) takes priority
     if (useUIStore.getState().draggingTerminalId != null) {
       dragProps.onDragOver(e);
       return;
     }
-    // Allow file drops from OS or editors (VS Code/Cursor)
-    if (e.dataTransfer.types.includes('Files') || e.dataTransfer.types.includes('codefiles') || e.dataTransfer.types.includes('text/plain')) {
+    if (e.dataTransfer.types.includes('Files') || e.dataTransfer.types.includes('codefiles') || e.dataTransfer.types.includes('text/uri-list') || e.dataTransfer.types.includes('text/plain')) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'copy';
       return;
     }
     dragProps.onDragOver(e);
   }, [dragProps]);
-
 
   return (
     <div

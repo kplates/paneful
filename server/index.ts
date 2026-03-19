@@ -290,58 +290,153 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
     }
   });
 
-  // Resolve a dropped file's full path using OS file index (Spotlight on macOS)
+  // Resolve a dropped file's full path via tiered search (stat → find → Spotlight)
+  const resolvePathCache = new Map<string, { path: string | null; isDirectory: boolean; ts: number }>();
+  const RESOLVE_CACHE_TTL = 30_000;
+
   app.post('/api/resolve-path', (req, res) => {
-    const { name, size, lastModified } = req.body;
+    const { name, size, lastModified, cwd: hintCwd } = req.body;
     if (!name) {
       res.status(400).json({ error: 'name required' });
       return;
     }
 
-    const findBest = (candidates: string[]): string | null => {
-      if (candidates.length === 0) return null;
-      if (candidates.length === 1) return candidates[0];
-
-      // Score candidates: exact size + mtime match wins, then size-only, then most recent
-      let best: { path: string; score: number; mtime: number } | null = null;
-      for (const candidate of candidates) {
-        try {
-          const stat = fs.statSync(candidate);
-          let score = 0;
-          if (size && stat.size === size) score += 10;
-          if (lastModified && Math.abs(stat.mtimeMs - lastModified) < 2000) score += 5;
-          // Exclude node_modules and hidden dirs to prefer "real" files
-          if (!candidate.includes('node_modules') && !candidate.includes('/.')) score += 1;
-          if (!best || score > best.score || (score === best.score && stat.mtimeMs > best.mtime)) {
-            best = { path: candidate, score, mtime: stat.mtimeMs };
-          }
-        } catch { /* skip inaccessible */ }
-      }
-      return best?.path ?? candidates[0];
-    };
+    const cacheKey = `${name}:${size ?? ''}:${lastModified ?? ''}`;
+    const cached = resolvePathCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < RESOLVE_CACHE_TTL) {
+      res.json({ path: cached.path, isDirectory: cached.isDirectory });
+      return;
+    }
 
     const respond = (resolved: string | null) => {
-      if (!resolved) { res.json({ path: null }); return; }
-      try {
-        const isDirectory = fs.statSync(resolved).isDirectory();
-        res.json({ path: resolved, isDirectory });
-      } catch {
-        res.json({ path: resolved, isDirectory: false });
+      let isDirectory = false;
+      if (resolved) {
+        try { isDirectory = fs.statSync(resolved).isDirectory(); } catch {}
       }
+      resolvePathCache.set(cacheKey, { path: resolved, isDirectory, ts: Date.now() });
+      res.json({ path: resolved, isDirectory });
     };
 
-    if (process.platform === 'darwin') {
-      execFile('mdfind', [`kMDItemFSName == '${name.replace(/'/g, "\\'")}'`], (err, stdout) => {
-        if (err) { respond(null); return; }
-        const candidates = stdout.trim().split('\n').filter(Boolean);
-        respond(findBest(candidates));
-      });
+    const homeDir = os.homedir();
+    const quickDirs = [
+      homeDir,
+      path.join(homeDir, 'Desktop'),
+      path.join(homeDir, 'Downloads'),
+      path.join(homeDir, 'Documents'),
+      path.join(homeDir, 'Developer'),
+      path.join(homeDir, 'Projects'),
+      path.join(homeDir, 'Source'),
+      path.join(homeDir, 'src'),
+      path.join(homeDir, 'code'),
+      path.join(homeDir, 'repos'),
+      path.join(homeDir, 'workspace'),
+      '/tmp',
+    ];
+    for (const proj of projectStore.list()) {
+      const parent = path.dirname(proj.cwd);
+      if (!quickDirs.includes(parent)) quickDirs.push(parent);
+    }
+
+    for (const dir of quickDirs) {
+      const candidate = path.join(dir, name);
+      try {
+        const stat = fs.statSync(candidate);
+        if (!size || stat.size === size) {
+          respond(candidate);
+          return;
+        }
+      } catch {}
+    }
+
+    const projectCwds = hintCwd ? [hintCwd] : [];
+    for (const proj of projectStore.list()) {
+      if (proj.cwd !== hintCwd) projectCwds.push(proj.cwd);
+    }
+    const subDirs = ['', 'server', 'src', 'lib', 'app', 'web', 'web/src', 'web/src/lib',
+      'web/src/hooks', 'web/src/stores', 'web/src/components', 'test', 'tests', 'scripts'];
+    for (const cwd of projectCwds) {
+      for (const sub of subDirs) {
+        const candidate = sub ? path.join(cwd, sub, name) : path.join(cwd, name);
+        try {
+          const stat = fs.statSync(candidate);
+          if (!size || stat.size === size) {
+            respond(candidate);
+            return;
+          }
+        } catch {}
+      }
+    }
+
+    const searchDirs = projectCwds;
+    if (searchDirs.length > 0) {
+      let found = false;
+      let pending = searchDirs.length;
+      for (const dir of searchDirs) {
+        execFile('find', [
+          dir, '-name', name, '-maxdepth', '10',
+          '-not', '-path', '*/node_modules/*',
+          '-not', '-path', '*/.*/*',
+          '-print', '-quit',
+        ], { timeout: 1000 }, (err, stdout) => {
+          pending--;
+          if (found) return;
+          const match = stdout?.trim();
+          if (!err && match) {
+            try {
+              const stat = fs.statSync(match);
+              if (!size || stat.size === size) {
+                found = true;
+                respond(match);
+                return;
+              }
+            } catch {}
+          }
+          if (pending === 0 && !found) fallbackSearch();
+        });
+      }
     } else {
-      execFile('locate', ['-l', '20', '-b', `\\${name}`], (err, stdout) => {
-        if (err) { respond(null); return; }
-        const candidates = stdout.trim().split('\n').filter(Boolean);
-        respond(findBest(candidates));
-      });
+      fallbackSearch();
+    }
+
+    function fallbackSearch() {
+      const findBest = (candidates: string[]): string | null => {
+        if (candidates.length === 0) return null;
+        if (candidates.length === 1) return candidates[0];
+
+        const capped = candidates.slice(0, 20);
+        let best: { path: string; score: number; mtime: number } | null = null;
+        for (const candidate of capped) {
+          try {
+            const stat = fs.statSync(candidate);
+            let score = 0;
+            if (size && stat.size === size) score += 10;
+            if (lastModified && Math.abs(stat.mtimeMs - lastModified) < 2000) score += 5;
+            if (!candidate.includes('node_modules') && !candidate.includes('/.')) score += 1;
+            if (!best || score > best.score || (score === best.score && stat.mtimeMs > best.mtime)) {
+              best = { path: candidate, score, mtime: stat.mtimeMs };
+            }
+            if (best.score >= 16) break;
+          } catch {}
+        }
+        return best?.path ?? candidates[0];
+      };
+
+      if (process.platform === 'darwin') {
+        execFile('mdfind', [
+          '-onlyin', homeDir,
+          `kMDItemFSName == '${name.replace(/'/g, "\\'")}'`,
+        ], { timeout: 3000 }, (err, stdout) => {
+          if (err) { respond(null); return; }
+          const candidates = stdout.trim().split('\n').filter(Boolean);
+          respond(findBest(candidates));
+        });
+      } else {
+        execFile('locate', ['-l', '20', '-b', `\\${name}`], { timeout: 3000 }, (err, stdout) => {
+          if (err) { respond(null); return; }
+          const candidates = stdout.trim().split('\n').filter(Boolean);
+          respond(findBest(candidates));
+        });
+      }
     }
   });
 

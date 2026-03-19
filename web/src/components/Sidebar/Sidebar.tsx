@@ -9,6 +9,7 @@ import { sendMessage } from '../../hooks/useWebSocket';
 import { setPendingCommand } from '../../hooks/useTerminal';
 import { killProjectTerminals } from '../../lib/terminal-actions';
 import { applyPreset, getTerminalIds, PresetName } from '../../lib/layout-engine';
+import { consumeNativeDropPaths } from '../../lib/native-drop';
 import { ProjectItem } from './ProjectItem';
 import { NewProjectDialog } from './NewProjectDialog';
 import { FavouritesList } from './FavouritesList';
@@ -232,7 +233,17 @@ export function Sidebar() {
     e.preventDefault();
     e.stopPropagation();
 
-    // Resolve the dropped folder/file path via the server
+    // Native Swift wrapper provides resolved paths instantly — skip Spotlight
+    const nativePaths = consumeNativeDropPaths();
+    if (nativePaths && nativePaths.length > 0) {
+      const resolvedPath = nativePaths[0];
+      const folderName = resolvedPath.split('/').pop() || e.dataTransfer.files[0].name;
+      setDropInitial({ name: folderName, cwd: resolvedPath });
+      setDialogOpen(true);
+      return;
+    }
+
+    // Fallback: resolve via Spotlight/locate on the server
     const file = e.dataTransfer.files[0];
     fetch('/api/resolve-path', {
       method: 'POST',
