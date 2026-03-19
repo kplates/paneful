@@ -15,7 +15,8 @@ type ClientMessage =
   | { type: 'pty:kill'; terminalId: string }
   | { type: 'project:kill'; projectId: string }
   | { type: 'project:create'; projectId: string; name: string; cwd: string }
-  | { type: 'project:remove'; projectId: string };
+  | { type: 'project:remove'; projectId: string }
+  | { type: 'open:url'; url: string };
 
 // Server → Client
 type ServerMessage =
@@ -192,6 +193,16 @@ export class WsHandler {
           this.send({ type: 'pty:exit', terminalId: tid, exitCode: 0 });
         }
         this.projectStore.remove(msg.projectId);
+        break;
+      }
+
+      case 'open:url': {
+        const url = msg.url;
+        if (/^https?:\/\//i.test(url)) {
+          import('open').then(({ default: open }) => {
+            open(url).catch(() => {});
+          });
+        }
         break;
       }
     }

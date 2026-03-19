@@ -6,7 +6,8 @@ export type ClientMessage =
   | { type: 'pty:kill'; terminalId: string }
   | { type: 'project:kill'; projectId: string }
   | { type: 'project:create'; projectId: string; name: string; cwd: string }
-  | { type: 'project:remove'; projectId: string };
+  | { type: 'project:remove'; projectId: string }
+  | { type: 'open:url'; url: string };
 
 // Server → Client
 export type ServerMessage =

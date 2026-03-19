@@ -145,14 +145,18 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
       fontSize: 13,
       lineHeight: 1.2,
       cursorBlink: true,
-      cursorStyle: 'block',
+      cursorStyle: 'bar',
       allowProposedApi: true,
       scrollback: 10000,
       minimumContrastRatio: isLight ? 7 : 1,
     });
 
     const fitAddon = new FitAddon();
-    const webLinksAddon = new WebLinksAddon();
+    const webLinksAddon = new WebLinksAddon((_event: MouseEvent, uri: string) => {
+      if (_event.ctrlKey || _event.metaKey) {
+        sendMessage({ type: 'open:url', url: uri });
+      }
+    });
     const searchAddon = new SearchAddon();
 
     term.loadAddon(fitAddon);
@@ -170,6 +174,47 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
     if (term.element) {
       terminalElements.set(terminalId, term.element);
     }
+
+    // Click-to-move cursor on the current input line
+    const screenEl = term.element?.querySelector('.xterm-screen');
+    if (screenEl) {
+      screenEl.addEventListener('mouseup', (e: Event) => {
+        const me = e as MouseEvent;
+        if (me.ctrlKey || me.metaKey) return;
+
+        setTimeout(() => {
+          if (term.hasSelection()) return;
+          const buf = term.buffer.active;
+          if (buf.viewportY !== buf.baseY) return;
+
+          const rect = (screenEl as HTMLElement).getBoundingClientRect();
+          const clickCol = Math.floor((me.clientX - rect.left) / (rect.width / term.cols));
+          const clickRow = Math.floor((me.clientY - rect.top) / (rect.height / term.rows));
+          if (clickRow !== buf.cursorY) return;
+
+          // Clamp to actual line content so we never arrow past the input
+          const line = buf.getLine(buf.baseY + buf.cursorY);
+          if (!line) return;
+          const lineEnd = line.translateToString().trimEnd().length;
+          const targetCol = Math.min(clickCol, lineEnd);
+
+          const delta = targetCol - buf.cursorX;
+          if (delta === 0) return;
+          const seq = delta > 0 ? '\x1b[C' : '\x1b[D';
+          sendMessage({ type: 'pty:input', terminalId, data: seq.repeat(Math.abs(delta)) });
+        }, 0);
+      });
+    }
+
+    // Clean up copied text: trim trailing whitespace that xterm pads on each row
+    term.element?.addEventListener('copy', (e) => {
+      const sel = term.getSelection();
+      if (sel) {
+        const cleaned = sel.split('\n').map(l => l.trimEnd()).join('\n');
+        (e as ClipboardEvent).clipboardData?.setData('text/plain', cleaned);
+        e.preventDefault();
+      }
+    });
 
     // Register session in store
     createSession(terminalId, projectId);
