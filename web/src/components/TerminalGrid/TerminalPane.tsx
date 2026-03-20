@@ -115,7 +115,7 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
         ${isDragging ? 'opacity-40' : ''}
         transition-colors duration-100
       `}
-      onClick={focus}
+      onMouseDown={focus}
       onDragOver={handleDragOver}
       onDragLeave={dragProps.onDragLeave}
       onDrop={handleFileDrop}
