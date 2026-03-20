@@ -1,4 +1,5 @@
 import * as pty from 'node-pty';
+import { execSync } from 'node:child_process';
 import os from 'node:os';
 
 interface ManagedPty {
@@ -105,7 +106,9 @@ export class PtyManager {
     for (const [terminalId, managed] of this.sessions) {
       try {
         const proc = managed.process.process;
-        if (proc === 'claude' || proc.startsWith('codex')) {
+        const isAgent = proc === 'claude' || proc === 'aider' || proc.startsWith('codex')
+          || (RUNTIME_PROCESSES.has(proc) && this.checkChildCmdline(managed.process.pid));
+        if (isAgent) {
           const list = result.get(managed.projectId);
           if (list) list.push(terminalId);
           else result.set(managed.projectId, [terminalId]);
@@ -116,4 +119,24 @@ export class PtyManager {
     }
     return result;
   }
+
+  /** Check if any child process of the shell is a known AI agent. */
+  private checkChildCmdline(shellPid: number): boolean {
+    try {
+      const childPids = execSync(`pgrep -P ${shellPid}`, { encoding: 'utf8', timeout: 1000 })
+        .trim().split('\n').filter(Boolean);
+      if (childPids.length === 0) return false;
+      for (const pid of childPids) {
+        const cmdline = execSync(`ps -o args= -p ${pid}`, { encoding: 'utf8', timeout: 1000 }).trim();
+        if (AGENT_CMD_PATTERN.test(cmdline)) return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
 }
+
+const RUNTIME_PROCESSES = new Set(['node', 'python', 'python3']);
+// Match agent binary names at the end of a path or as a standalone token
+const AGENT_CMD_PATTERN = /(?:^|\/)(codex|claude|aider)(?:\s|$)/;
