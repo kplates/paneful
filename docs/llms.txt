@@ -1,0 +1,41 @@
+# Paneful
+
+> A fast, GPU-accelerated terminal multiplexer that runs in your browser — or as a native macOS app.
+
+Paneful lets you split terminal panes, organize them by project, sync with your editor, and detect AI agents and dev servers automatically. One `npm install`, no config.
+
+## Install
+
+```
+npm i -g paneful
+paneful
+```
+
+## Key Features
+
+- **Split Pane Layouts**: 5 presets — columns, rows, main+stack, main+row, grid. Cycle with Cmd+T.
+- **Project Sidebar**: Organize terminals by project with their own layouts and working directories.
+- **Editor Sync**: Auto-switches project when you focus a VS Code/Cursor/Zed window (macOS).
+- **GPU Rendering**: WebGL2-accelerated terminals via @xterm/addon-webgl. Toggle in sidebar or command palette.
+- **AI Agent Detection**: Detects Claude Code and Codex CLI. Shows pulsing AI badge in sidebar.
+- **Dev Server Detection**: Detects Vite, Next.js, Angular dev servers. Green dot in sidebar while port is alive.
+- **Favourites**: Save and restore workspace layouts with per-pane commands.
+- **Native macOS App**: `paneful --install-app` for a standalone Dock app with WebKit window.
+- **Command Palette**: Cmd+P for fuzzy-searchable actions, project switching, and layout changes.
+- **Terminal Search**: Cmd+F to search scrollback.
+- **Drag & Drop**: Drag folders from Finder to create projects. Drag files into panes to paste paths.
+- **Git Branch Display**: Shows current branch and status badges per project in sidebar.
+
+## Architecture
+
+- Backend: Node.js (Express + node-pty + ws)
+- Frontend: React + TypeScript + xterm.js + Zustand + Tailwind CSS
+- Protocol: JSON over a single WebSocket connection
+- Distribution: npm package
+
+## Links
+
+- Website: https://paneful.dev
+- npm: https://www.npmjs.com/package/paneful
+- GitHub: https://github.com/kplates/paneful
+- Changelog: https://github.com/kplates/paneful/blob/master/CHANGELOG.md

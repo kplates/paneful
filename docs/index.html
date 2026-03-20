@@ -3,24 +3,57 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Paneful — Browser-based Terminal Multiplexer</title>
+    <title>Paneful — GPU-Accelerated Terminal Multiplexer for Your Browser</title>
     <meta
       name="description"
-      content="A terminal multiplexer that runs in your browser. Split panes, organize by project, drag and drop from Finder, sync with your editor — all from a single npm install."
+      content="A fast, GPU-accelerated terminal multiplexer that runs in your browser or as a native macOS app. Split panes, organize projects, sync with your editor, detect AI agents and dev servers. One npm install, no config."
     />
-    <meta
-      property="og:title"
-      content="Paneful — Browser-based Terminal Multiplexer"
-    />
-    <meta
-      property="og:description"
-      content="Split panes, organize by project, drag and drop from Finder, sync with your editor — all from a single npm install."
-    />
-    <meta property="og:image" content="https://paneful.dev/screenshot.png" />
-    <link rel="canonical" href="https://paneful.dev/" />
+    <meta name="keywords" content="terminal multiplexer, browser terminal, xterm.js, split panes, GPU rendering, WebGL terminal, macOS terminal, developer tools, tmux alternative, Claude Code, AI agent detection" />
+    <meta name="author" content="kplates" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Paneful — GPU-Accelerated Terminal Multiplexer" />
+    <meta property="og:description" content="A fast, GPU-accelerated terminal multiplexer that runs in your browser or as a native macOS app. Split panes, organize projects, sync with your editor. One npm install." />
+    <meta property="og:image" content="https://paneful.dev/screenshot0.png" />
+    <meta property="og:image:width" content="1506" />
+    <meta property="og:image:height" content="888" />
+    <meta property="og:url" content="https://paneful.dev/" />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Paneful" />
+    <link rel="canonical" href="https://paneful.dev/" />
+
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Paneful — GPU-Accelerated Terminal Multiplexer" />
+    <meta name="twitter:description" content="A fast terminal multiplexer in your browser or as a native macOS app. GPU rendering, editor sync, AI agent detection." />
+    <meta name="twitter:image" content="https://paneful.dev/screenshot0.png" />
+
+    <!-- AI/LLM discoverability -->
+    <link rel="alternate" type="text/plain" href="https://paneful.dev/llms.txt" title="LLM-friendly site summary" />
+
+    <!-- Structured data for rich search results -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Paneful",
+      "description": "A fast, GPU-accelerated terminal multiplexer that runs in your browser or as a native macOS app.",
+      "url": "https://paneful.dev",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "macOS, Linux",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "softwareVersion": "0.9.9",
+      "downloadUrl": "https://www.npmjs.com/package/paneful",
+      "screenshot": "https://paneful.dev/screenshot0.png",
+      "codeRepository": "https://github.com/kplates/paneful",
+      "programmingLanguage": ["TypeScript", "JavaScript"],
+      "author": { "@type": "Person", "name": "kplates" }
+    }
+    </script>
+
     <link rel="icon" type="image/png" href="icon-512.png" />
+    <link rel="apple-touch-icon" href="icon-512.png" />
     <style>
       *,
       *::before,

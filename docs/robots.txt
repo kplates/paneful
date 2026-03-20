@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://paneful.dev/sitemap.xml
+
+# AI/LLM summary
+# https://paneful.dev/llms.txt
