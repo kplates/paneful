@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.10 — 2026-03-21
+
+- Updated docs site with screenshot slider and hover-to-pause
+- Added SEO metadata, sitemap, robots.txt, and JSON-LD structured data
+- Added llms.txt for AI discoverability
+- Updated npm package description and keywords
+- Optimized screenshot file sizes
+
 ## 0.9.9 — 2026-03-20
 
 - GPU-accelerated terminal rendering via WebGL2 (enabled by default, toggle in sidebar or command palette)
