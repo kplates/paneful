@@ -24,6 +24,7 @@ interface UIState {
   dropTarget: { terminalId: string; edge: string } | null;
   connectionStatus: "connecting" | "connected" | "disconnected";
   editorSyncEnabled: boolean;
+  gpuRendering: boolean;
   theme: ThemePreference;
   syncToast: { projectName: string; id: number } | null;
   searchTerminalId: string | null;
@@ -40,6 +41,7 @@ interface UIState {
     status: "connecting" | "connected" | "disconnected",
   ) => void;
   toggleEditorSync: () => void;
+  toggleGpuRendering: () => void;
   setTheme: (theme: ThemePreference) => void;
   cycleTheme: () => void;
   showSyncToast: (projectName: string) => void;
@@ -70,8 +72,8 @@ const initialTheme = getThemeCookie();
 applyThemeAttribute(initialTheme);
 
 function persistUI(get: () => UIState) {
-  const { theme, sidebarWidth, editorSyncEnabled } = get();
-  persistSettings({ ui: { theme, sidebarWidth, editorSyncEnabled } });
+  const { theme, sidebarWidth, editorSyncEnabled, gpuRendering } = get();
+  persistSettings({ ui: { theme, sidebarWidth, editorSyncEnabled, gpuRendering } });
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
@@ -82,6 +84,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   dropTarget: null,
   connectionStatus: "connecting",
   editorSyncEnabled: true,
+  gpuRendering: true,
   theme: initialTheme,
   syncToast: null,
   searchTerminalId: null,
@@ -101,6 +104,10 @@ export const useUIStore = create<UIState>((set, get) => ({
   setConnectionStatus: (status) => set({ connectionStatus: status }),
   toggleEditorSync: () => {
     set((s) => ({ editorSyncEnabled: !s.editorSyncEnabled }));
+    persistUI(get);
+  },
+  toggleGpuRendering: () => {
+    set((s) => ({ gpuRendering: !s.gpuRendering }));
     persistUI(get);
   },
   setTheme: (theme) => {
@@ -138,7 +145,7 @@ export const useUIStore = create<UIState>((set, get) => ({
       const res = await fetch("/api/settings");
       const settings = await res.json();
       if (settings.ui) {
-        const { theme, sidebarWidth, editorSyncEnabled } = settings.ui;
+        const { theme, sidebarWidth, editorSyncEnabled, gpuRendering } = settings.ui;
         if (theme) {
           setThemeCookie(theme);
           applyThemeAttribute(theme);
@@ -147,6 +154,7 @@ export const useUIStore = create<UIState>((set, get) => ({
           ...(theme ? { theme } : {}),
           ...(sidebarWidth !== undefined ? { sidebarWidth } : {}),
           ...(editorSyncEnabled !== undefined ? { editorSyncEnabled } : {}),
+          ...(gpuRendering !== undefined ? { gpuRendering } : {}),
         });
       }
     } catch {

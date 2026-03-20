@@ -1,14 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.9.9 — 2026-03-20
 
-- Native drag & drop in macOS app — files dropped from VS Code now resolve instantly via native pasteboard instead of slow heuristic search
-- Ctrl/Cmd+Click to open URLs in the system browser (works in both browser and native app)
-- Click on the current input line to reposition cursor
-- Clean copy from terminal — trailing whitespace stripped automatically
-- Thinner bar cursor instead of block cursor
-- Scroll active project into view in sidebar when switched via editor sync
-- Faster pane focus — triggers on mouse down instead of click
+- GPU-accelerated terminal rendering via WebGL2 (enabled by default, toggle in sidebar or command palette)
+- Instant native drag & drop in macOS app via native pasteboard
+- Ctrl/Cmd+Click to open URLs in system browser
+- Click to reposition cursor on current input line
+- Strip trailing whitespace on terminal copy
+- Bar cursor style
+- Scroll active project into view on editor sync
+- Faster pane focus
+- Fix Codex agent detection
 
 ## 0.9.8 — 2026-03-19
 

@@ -51,6 +51,10 @@ Requires:
 
 Save a workspace layout as a favourite — name, layout preset, and per-pane commands. Launch any favourite with a click to instantly recreate the setup.
 
+### GPU Rendering
+
+Terminals render via WebGL2 on the GPU by default, which is significantly faster for high-throughput output and multiple panes. Toggle it from the sidebar header (lightning bolt icon) or the command palette. Falls back to the DOM renderer automatically if WebGL2 is unavailable or context is lost. The setting persists across sessions.
+
 ### Terminal Search
 
 Press `Cmd+F` in any focused terminal to search its scrollback. Navigate matches with Enter / Shift+Enter or the up/down buttons. Press Escape to close.

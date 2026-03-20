@@ -3,6 +3,7 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { SearchAddon } from '@xterm/addon-search';
+import { WebglAddon } from '@xterm/addon-webgl';
 import { sendMessage } from './useWebSocket';
 import { useSessionStore } from '../stores/sessionStore';
 import { useUIStore, getResolvedTheme } from '../stores/uiStore';
@@ -26,6 +27,9 @@ const searchAddons = new Map<string, SearchAddon>();
 // FitAddon instances per terminal (reused across remounts to avoid accumulation)
 const fitAddons = new Map<string, FitAddon>();
 
+// WebGL addon instances per terminal (GPU-accelerated rendering)
+const webglAddons = new Map<string, WebglAddon>();
+
 // Global terminal registry for theme updates — avoids per-terminal store subscriptions
 const terminalRegistry = new Map<string, Terminal>();
 
@@ -42,6 +46,44 @@ useUIStore.subscribe((s) => {
     _prevTheme = s.theme;
     for (const term of terminalRegistry.values()) {
       applyThemeToTerminal(term);
+    }
+  }
+});
+
+function loadWebglAddon(id: string, term: Terminal) {
+  if (webglAddons.has(id)) return;
+  try {
+    const addon = new WebglAddon();
+    addon.onContextLoss(() => {
+      addon.dispose();
+      webglAddons.delete(id);
+    });
+    term.loadAddon(addon);
+    webglAddons.set(id, addon);
+  } catch {
+    // WebGL2 not available — stay on DOM renderer
+  }
+}
+
+function unloadWebglAddon(id: string) {
+  const addon = webglAddons.get(id);
+  if (addon) {
+    addon.dispose();
+    webglAddons.delete(id);
+  }
+}
+
+// Single global listener: when gpuRendering changes, load/unload WebGL on all terminals
+let _prevGpu = useUIStore.getState().gpuRendering;
+useUIStore.subscribe((s) => {
+  if (s.gpuRendering !== _prevGpu) {
+    _prevGpu = s.gpuRendering;
+    for (const [id, term] of terminalRegistry) {
+      if (s.gpuRendering) {
+        loadWebglAddon(id, term);
+      } else {
+        unloadWebglAddon(id);
+      }
     }
   }
 });
@@ -173,6 +215,11 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
     // Store the xterm DOM element for future reparenting
     if (term.element) {
       terminalElements.set(terminalId, term.element);
+    }
+
+    // Load WebGL addon for GPU-accelerated rendering
+    if (useUIStore.getState().gpuRendering) {
+      loadWebglAddon(terminalId, term);
     }
 
     // Click-to-move cursor on the current input line
@@ -355,5 +402,6 @@ export function cleanupTerminal(terminalId: string) {
   terminalElements.delete(terminalId);
   fitAddons.delete(terminalId);
   searchAddons.delete(terminalId);
+  unloadWebglAddon(terminalId);
   terminalRegistry.delete(terminalId);
 }

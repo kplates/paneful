@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, PanelLeftClose, ArrowUpCircle, Lightbulb, MonitorSmartphone, Sun, Moon, Monitor, Brush } from 'lucide-react';
+import { Plus, PanelLeftClose, ArrowUpCircle, Lightbulb, MonitorSmartphone, Sun, Moon, Monitor, Brush, Zap } from 'lucide-react';
 import { useProjectStore } from '../../stores/projectStore';
 import { useLayoutStore } from '../../stores/layoutStore';
 import { useUIStore } from '../../stores/uiStore';
@@ -51,6 +51,8 @@ export function Sidebar() {
   const isResizing = useRef(false);
   const editorSyncEnabled = useUIStore((s) => s.editorSyncEnabled);
   const toggleEditorSync = useUIStore((s) => s.toggleEditorSync);
+  const gpuRendering = useUIStore((s) => s.gpuRendering);
+  const toggleGpuRendering = useUIStore((s) => s.toggleGpuRendering);
   const theme = useUIStore((s) => s.theme);
   const cycleTheme = useUIStore((s) => s.cycleTheme);
   const activePorts = useSessionStore((s) => s.activePorts);
@@ -320,6 +322,19 @@ export function Sidebar() {
               : 'Editor sync OFF — click to enable. Requires: (1) Paneful (or Terminal, if running from CLI) in System Settings → Privacy & Security → Accessibility, (2) Editor window title includes folder name (default in VS Code/Cursor). Note: after updating paneful, you may need to remove and re-add it in Accessibility settings.'}
           >
             <MonitorSmartphone size={14} />
+          </button>
+          <button
+            onClick={toggleGpuRendering}
+            className={`p-1 rounded transition-colors ${
+              gpuRendering
+                ? 'text-[var(--accent)] hover:bg-[var(--surface-3)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)]'
+            }`}
+            title={gpuRendering
+              ? 'GPU rendering ON — terminals use WebGL. Click to switch to DOM renderer.'
+              : 'GPU rendering OFF — terminals use DOM renderer. Click to enable WebGL.'}
+          >
+            <Zap size={14} />
           </button>
           <button
             onClick={handleCleanupCheck}

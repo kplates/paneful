@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import {
   Folder, Star, Columns2, Rows2, PanelLeft, PanelTop, Grid2X2,
   Plus, X, PanelLeftClose, MonitorSmartphone, LayoutDashboard,
-  Search, Command,
+  Search, Command, Zap,
 } from 'lucide-react';
 import { useUIStore } from '../stores/uiStore';
 import { useProjectStore } from '../stores/projectStore';
@@ -312,6 +312,16 @@ function buildItems(onClose: () => void): PaletteItem[] {
     icon: <MonitorSmartphone size={14} />,
     action: () => {
       useUIStore.getState().toggleEditorSync();
+    },
+  });
+
+  items.push({
+    id: 'action:toggle-gpu-rendering',
+    label: 'Toggle GPU rendering',
+    category: 'Action',
+    icon: <Zap size={14} />,
+    action: () => {
+      useUIStore.getState().toggleGpuRendering();
     },
   });
 
