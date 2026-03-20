@@ -245,10 +245,43 @@
         overflow: hidden;
         border: 1px solid var(--border);
         box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+        position: relative;
       }
       .screenshot-wrap img {
         width: 100%;
         display: block;
+      }
+      .slider-track {
+        display: flex;
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .slider-track img {
+        flex-shrink: 0;
+        width: 100%;
+      }
+      .slider-dots {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .slider-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--surface-3);
+        border: 1px solid var(--border);
+        cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+        padding: 0;
+      }
+      .slider-dot:hover {
+        background: var(--text-muted);
+      }
+      .slider-dot.active {
+        background: var(--accent);
+        border-color: var(--accent);
+        transform: scale(1.25);
       }
 
       /* ---- Sections ---- */
@@ -721,10 +754,16 @@
           </a>
         </div>
         <div class="screenshot-wrap">
-          <img
-            src="screenshot.png"
-            alt="Paneful — split pane terminal in the browser"
-          />
+          <div class="slider-track" id="slider-track">
+            <img src="screenshot0.png" alt="Paneful — split pane terminal layout" />
+            <img src="screenshot1.png" alt="Paneful — project sidebar and terminals" />
+            <img src="screenshot2.png" alt="Paneful — multiple panes and git status" />
+          </div>
+        </div>
+        <div class="slider-dots" id="slider-dots">
+          <button class="slider-dot active" data-slide="0"></button>
+          <button class="slider-dot" data-slide="1"></button>
+          <button class="slider-dot" data-slide="2"></button>
         </div>
       </div>
     </section>
@@ -1090,6 +1129,44 @@
     </footer>
 
     <canvas id="particle-canvas"></canvas>
+    <script>
+      (() => {
+        const track = document.getElementById("slider-track");
+        const dots = document.querySelectorAll(".slider-dot");
+        const SLIDE_COUNT = 3;
+        const INTERVAL = 4000;
+        let current = 0;
+        let timer;
+
+        function goTo(i) {
+          current = i;
+          track.style.transform = `translateX(-${current * 100}%)`;
+          dots.forEach((d, j) => d.classList.toggle("active", j === current));
+        }
+
+        function next() {
+          goTo((current + 1) % SLIDE_COUNT);
+        }
+
+        function startAuto() {
+          clearInterval(timer);
+          timer = setInterval(next, INTERVAL);
+        }
+
+        dots.forEach((dot) => {
+          dot.addEventListener("click", () => {
+            goTo(Number(dot.dataset.slide));
+            startAuto();
+          });
+        });
+
+        const wrap = track.parentElement;
+        wrap.addEventListener("mouseenter", () => clearInterval(timer));
+        wrap.addEventListener("mouseleave", startAuto);
+
+        startAuto();
+      })();
+    </script>
     <script>
       (() => {
         const canvas = document.getElementById("particle-canvas");

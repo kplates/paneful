@@ -4,7 +4,7 @@ A terminal multiplexer that runs in your browser. Split panes, organize by proje
 
 **Website:** [paneful.dev](https://paneful.dev)
 
-![Paneful](screenshot.png)
+![Paneful](screenshot.gif)
 
 ## Install
 
