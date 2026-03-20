@@ -166,6 +166,61 @@ func readLockfile() -> (pid: pid_t, port: Int)? {
     return (pid, port)
 }
 
+class DropWebView: WKWebView {
+    override init(frame: CGRect, configuration: WKWebViewConfiguration) {
+        super.init(frame: frame, configuration: configuration)
+        registerForDraggedTypes([
+            .fileURL,
+            .URL,
+            .string,
+            NSPasteboard.PasteboardType("public.url"),
+            NSPasteboard.PasteboardType("com.apple.pasteboard.promised-file-url"),
+            NSPasteboard.PasteboardType("Apple files promise pasteboard type"),
+        ])
+    }
+    required init?(coder: NSCoder) { super.init(coder: coder) }
+
+    private func extractPaths(from pasteboard: NSPasteboard) -> [String] {
+        var paths: [String] = []
+        guard let items = pasteboard.pasteboardItems else { return paths }
+        for item in items {
+            // Try public.url first (file:// URI from VS Code)
+            if let urlStr = item.string(forType: NSPasteboard.PasteboardType("public.url")),
+               urlStr.hasPrefix("file://"),
+               let url = URL(string: urlStr) {
+                paths.append(url.path)
+                continue
+            }
+            // Fallback: plain text absolute path
+            if let text = item.string(forType: .string), text.hasPrefix("/") {
+                paths.append(text.trimmingCharacters(in: .whitespacesAndNewlines))
+            }
+        }
+        return paths
+    }
+
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        return extractPaths(from: sender.draggingPasteboard).isEmpty
+            ? super.draggingEntered(sender) : .copy
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        let paths = extractPaths(from: sender.draggingPasteboard)
+        if !paths.isEmpty {
+            if let json = try? JSONSerialization.data(withJSONObject: paths),
+               let jsonStr = String(data: json, encoding: .utf8) {
+                // Convert AppKit coordinates (origin bottom-left) to web coordinates (origin top-left)
+                let loc = sender.draggingLocation
+                let x = loc.x
+                let y = bounds.height - loc.y
+                evaluateJavaScript("window.__panefulHandleDrop && window.__panefulHandleDrop(\\(jsonStr), \\(x), \\(y))") { _, _ in }
+            }
+            return true
+        }
+        return super.performDragOperation(sender)
+    }
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
     var window: NSWindow!
     var webView: WKWebView!
@@ -252,7 +307,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let config = WKWebViewConfiguration()
         config.preferences.setValue(true, forKey: "developerExtrasEnabled")
 
-        webView = WKWebView(frame: .zero, configuration: config)
+        webView = DropWebView(frame: .zero, configuration: config)
         webView.load(URLRequest(url: URL(string: "http://localhost:\\(self.port)")!))
 
         window = NSWindow(

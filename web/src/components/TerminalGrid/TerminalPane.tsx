@@ -106,6 +106,7 @@ export function TerminalPane({ terminalId, projectId, cwd }: TerminalPaneProps) 
 
   return (
     <div
+      data-terminal-id={terminalId}
       style={{
         borderColor: isFocused ? 'var(--accent)' : 'transparent',
       }}

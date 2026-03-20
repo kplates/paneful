@@ -1,6 +1,7 @@
 declare global {
   interface Window {
     __panefulDropPaths?: string[] | null;
+    __panefulHandleDrop?: (paths: string[], x?: number, y?: number) => void;
   }
 }
 
