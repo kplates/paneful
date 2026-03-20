@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Folder, Trash2, XCircle, Terminal, GitBranch } from 'lucide-react';
 import { Project } from '../../stores/projectStore';
 import type { GitStatus } from '../../stores/sessionStore';
@@ -16,12 +16,20 @@ interface ProjectItemProps {
 
 export const ProjectItem = React.memo(function ProjectItem({ project, isActive, hasActivePorts, claudeStatus, gitStatus, onClick, onKill, onRemove }: ProjectItemProps) {
   const termCount = project.terminalIds.length;
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isActive && ref.current) {
+      ref.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [isActive]);
 
   return (
     <div
+      ref={ref}
       onClick={onClick}
       className={`
-        group flex items-center gap-2 px-3 py-2 mx-2 mb-1 rounded-lg cursor-pointer
+        group flex items-center gap-2 px-3 py-2 mx-2 mb-1 rounded-lg cursor-pointer scroll-my-8
         transition-colors duration-100
         ${isActive
           ? 'bg-[var(--surface-2)] text-[var(--text-primary)]'
