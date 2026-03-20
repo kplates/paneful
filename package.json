@@ -1,7 +1,7 @@
 {
   "name": "paneful",
-  "version": "0.9.9",
-  "description": "Browser-based terminal multiplexer with tmux-style pane management",
+  "version": "0.9.10",
+  "description": "A fast, GPU-accelerated terminal multiplexer in your browser or as a native macOS app. Split panes, organize projects, sync with your editor, detect AI agents.",
   "type": "module",
   "bin": {
     "paneful": "./dist/server/index.js"
@@ -56,7 +56,16 @@
     "multiplexer",
     "tmux",
     "pane",
-    "pty"
+    "pty",
+    "xterm",
+    "webgl",
+    "gpu",
+    "split-pane",
+    "macos",
+    "developer-tools",
+    "claude",
+    "ai-agent",
+    "browser-terminal"
   ],
   "packageManager": "pnpm@10.30.3+sha512.c961d1e0a2d8e354ecaa5166b822516668b7f44cb5bd95122d590dd81922f606f5473b6d23ec4a5be05e7fcd18e8488d47d978bbe981872f1145d06e9a740017"
 }
