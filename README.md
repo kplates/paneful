@@ -1,6 +1,6 @@
 # Paneful
 
-A terminal multiplexer that runs in your browser. Split panes, organize by project, drag and drop from Finder, sync with your editor — all from a single `npm install`.
+A fast, GPU-accelerated terminal multiplexer that runs in your browser — or as a native macOS app. Split panes, organize projects, sync with your editor, and detect AI agents and dev servers automatically. One `npm install`, no config.
 
 **Website:** [paneful.dev](https://paneful.dev)
 
