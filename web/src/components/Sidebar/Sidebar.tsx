@@ -322,10 +322,10 @@ export function Sidebar() {
                 : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)]'
             }`}
             title={editorSyncEnabled && editorNeedsAccessibility
-              ? 'Editor sync needs Accessibility permission. Go to System Settings → Privacy & Security → Accessibility and add paneful-editor-helper (in ~/.paneful). If it\'s already listed, try toggling it off and on, or removing and re-adding it.'
+              ? 'Editor sync needs Accessibility permission. Go to System Settings → Privacy & Security → Accessibility and add the app you launched paneful from (e.g. Paneful, Terminal, iTerm, VS Code, Cursor). If already listed, try toggling it off and on, or removing and re-adding it.'
               : editorSyncEnabled
               ? 'Editor sync ON — auto-switches project based on your active editor. Click to disable.'
-              : 'Editor sync OFF — click to enable. Requires Accessibility permission for paneful-editor-helper (in ~/.paneful). Go to System Settings → Privacy & Security → Accessibility. After updating paneful, you may need to remove and re-add it.'}
+              : 'Editor sync OFF — click to enable. Requires Accessibility permission for the app you launched paneful from (e.g. Paneful, Terminal, VS Code, Cursor) in System Settings → Privacy & Security → Accessibility. After updating, you may need to remove and re-add it.'}
           >
             <MonitorSmartphone size={14} />
             {editorSyncEnabled && editorNeedsAccessibility && (

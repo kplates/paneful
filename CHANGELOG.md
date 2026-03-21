@@ -1,9 +1,13 @@
 # Changelog
 
+## 0.9.12 — 2026-03-21
+
+- Improved editor sync tooltip messaging
+
 ## 0.9.11 — 2026-03-21
 
 - Add accessibility permission warning for editor sync — shows a yellow dot on the sync toggle when permission is missing
-- Editor sync monitor now only runs when sync is enabled (reduces idle resource usage)
+- Editor sync monitor only runs when sync is enabled (reduces idle resource usage)
 - Improved tooltip guidance: directs users to add paneful-editor-helper in Accessibility settings, with re-add/toggle hints for updates
 - Native helper binary now supports `--check` flag for lightweight permission probing
 
