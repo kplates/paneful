@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.14 — 2026-03-21
+
+- VS Code extension published to the [Marketplace](https://marketplace.visualstudio.com/items?itemName=kplates.paneful-vscode)
+  - **Paneful: Spawn project** — create or activate a project for the current workspace
+  - **Paneful: Send open file paths** — send open editor tabs to the focused terminal
+- Inbox monitor now supports action-based dispatch (spawn, paste) with backwards compatibility
+- Updated docs site and README with VS Code extension install instructions
+
 ## 0.9.13 — 2026-03-21
 
 - Add changelog link to update banner
