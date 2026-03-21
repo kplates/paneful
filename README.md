@@ -93,6 +93,15 @@ paneful --install-app
 
 A folder picker dialog lets you choose the install location (defaults to `/Applications`). The app launches Paneful in a native WebKit window — no browser tab needed. Updating via `paneful update` automatically rebuilds the `.app` in place.
 
+### VS Code Extension
+
+Install the [Paneful extension](https://marketplace.visualstudio.com/items?itemName=kplates.paneful-vscode) from the VS Code Marketplace. Works with VS Code, Cursor, and other VS Code-based editors.
+
+**Commands** (via Command Palette):
+
+- **Paneful: Spawn project** — Creates or activates a Paneful project for the current workspace folder.
+- **Paneful: Send open file paths** — Sends all open editor file paths to the focused Paneful terminal.
+
 ### Updating
 
 ```bash
