@@ -3,8 +3,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
+function writeInbox(payload: Record<string, unknown>): void {
+  const dir = path.join(os.homedir(), '.paneful');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'inbox.json'), JSON.stringify(payload));
+}
+
 export function activate(context: vscode.ExtensionContext) {
-  const disposable = vscode.commands.registerCommand('paneful.sendOpenFiles', () => {
+  const sendOpenFiles = vscode.commands.registerCommand('paneful.sendOpenFiles', () => {
     const files: string[] = [];
 
     for (const group of vscode.window.tabGroups.all) {
@@ -24,14 +30,28 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
-    const dir = path.join(os.homedir(), '.paneful');
-    fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'inbox.json'), JSON.stringify({ files }));
+    writeInbox({ action: 'paste', files });
 
     vscode.window.showInformationMessage(`Sent ${files.length} file path${files.length === 1 ? '' : 's'} to Paneful`);
   });
 
-  context.subscriptions.push(disposable);
+  const spawnProject = vscode.commands.registerCommand('paneful.spawnProject', () => {
+    const folder =
+      (vscode.window.activeTextEditor &&
+        vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)) ||
+      vscode.workspace.workspaceFolders?.[0];
+
+    if (!folder) {
+      vscode.window.showWarningMessage('No workspace folder open');
+      return;
+    }
+
+    writeInbox({ action: 'spawn', cwd: folder.uri.fsPath, name: folder.name });
+
+    vscode.window.showInformationMessage(`Spawned project: ${folder.name}`);
+  });
+
+  context.subscriptions.push(sendOpenFiles, spawnProject);
 }
 
 export function deactivate() {}

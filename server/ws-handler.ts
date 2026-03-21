@@ -1,5 +1,6 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import type { Server } from 'node:http';
+import { v4 as uuidv4 } from 'uuid';
 import { PtyManager } from './pty-manager.js';
 import { ProjectStore, newProject } from './project-store.js';
 import { PortMonitor } from './port-monitor.js';
@@ -71,8 +72,18 @@ export class WsHandler {
         this.send({ type: 'editor:status', needsAccessibility });
       },
     );
-    this.inboxMonitor = new InboxMonitor(dataDir, (files) => {
-      this.send({ type: 'inbox:paste', files });
+    this.inboxMonitor = new InboxMonitor(dataDir, {
+      onPaste: (files) => {
+        this.send({ type: 'inbox:paste', files });
+      },
+      onSpawn: (cwd, name) => {
+        const existing = this.projectStore.findByCwd(cwd);
+        const id = existing?.id ?? uuidv4();
+        if (!existing) {
+          this.projectStore.create(newProject(id, name, cwd));
+        }
+        this.send({ type: 'project:spawned', projectId: id, name, cwd });
+      },
     });
 
     this.wss = new WebSocketServer({ noServer: true });

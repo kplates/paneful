@@ -1,14 +1,28 @@
 {
   "name": "paneful-vscode",
   "displayName": "Paneful",
-  "description": "Send open file paths to the focused Paneful terminal",
+  "description": "Companion extension for Paneful — spawn projects and send file paths to Paneful terminals.",
   "version": "0.1.0",
   "publisher": "kplates",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kplates/paneful.git",
+    "directory": "vscode-extension"
+  },
+  "homepage": "https://paneful.dev",
+  "bugs": "https://github.com/kplates/paneful/issues",
   "engines": {
     "vscode": "^1.85.0"
   },
   "categories": [
     "Other"
+  ],
+  "keywords": [
+    "terminal",
+    "multiplexer",
+    "paneful"
   ],
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -17,12 +31,17 @@
       {
         "command": "paneful.sendOpenFiles",
         "title": "Paneful: Send open file paths"
+      },
+      {
+        "command": "paneful.spawnProject",
+        "title": "Paneful: Spawn project"
       }
     ]
   },
   "scripts": {
     "build": "tsc",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "package": "tsc && vsce package --allow-missing-repository"
   },
   "devDependencies": {
     "@types/vscode": "^1.85.0",

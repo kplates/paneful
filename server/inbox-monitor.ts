@@ -3,16 +3,21 @@ import { join } from 'node:path';
 
 const INBOX_FILE = 'inbox.json';
 
+export interface InboxHandlers {
+  onPaste?: (files: string[]) => void;
+  onSpawn?: (cwd: string, name: string) => void;
+}
+
 export class InboxMonitor {
   private dir: string;
-  private onChange: (files: string[]) => void;
+  private handlers: InboxHandlers;
   private watcher: FSWatcher | null = null;
   private destroyed = false;
   private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(dataDir: string, onChange: (files: string[]) => void) {
+  constructor(dataDir: string, handlers: InboxHandlers) {
     this.dir = dataDir;
-    this.onChange = onChange;
+    this.handlers = handlers;
   }
 
   resume(): void {
@@ -69,10 +74,19 @@ export class InboxMonitor {
       try { unlinkSync(filePath); } catch {}
 
       const data = JSON.parse(raw);
-      if (data && Array.isArray(data.files) && data.files.length > 0) {
-        const files = data.files.filter((f: unknown) => typeof f === 'string');
-        if (files.length > 0) {
-          this.onChange(files);
+      if (!data || typeof data !== 'object') return;
+
+      if (data.action === 'spawn') {
+        if (typeof data.cwd === 'string' && typeof data.name === 'string') {
+          this.handlers.onSpawn?.(data.cwd, data.name);
+        }
+      } else if (data.action === 'paste' || Array.isArray(data.files)) {
+        // 'paste' action, or backwards-compat: bare { files: [...] }
+        if (Array.isArray(data.files) && data.files.length > 0) {
+          const files = data.files.filter((f: unknown) => typeof f === 'string');
+          if (files.length > 0) {
+            this.handlers.onPaste?.(files);
+          }
         }
       }
     } catch {
