@@ -18,4 +18,5 @@ export type ServerMessage =
   | { type: 'port:status'; ports: Record<string, number[]> }
   | { type: 'claude:status'; statuses: Record<string, 'active' | 'idle'> }
   | { type: 'git:branch'; branches: Record<string, { branch: string; staged: number; modified: number; ahead: number; behind: number } | null> }
+  | { type: 'inbox:paste'; files: string[] }
   | { type: 'error'; message: string };

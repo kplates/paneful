@@ -123,6 +123,16 @@ export function useWebSocket() {
           return;
         }
 
+        // Handle inbox paste (file paths from VS Code extension)
+        if (msg.type === 'inbox:paste') {
+          const focusedId = useUIStore.getState().focusedTerminalId;
+          if (focusedId && msg.files.length > 0) {
+            const escaped = msg.files.map((f) => "'" + f.replace(/'/g, "'\\''" ) + "'").join(' ');
+            sendMessage({ type: 'pty:input', terminalId: focusedId, data: escaped });
+          }
+          return;
+        }
+
         // Handle active editor change (auto-focus project)
         if (msg.type === 'editor:active') {
           if (!useUIStore.getState().editorSyncEnabled) return;

@@ -457,7 +457,7 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
   const server = http.createServer(app);
 
   // WebSocket handler
-  const wsHandler = new WsHandler(server, ptyManager, projectStore, { onIdle: () => shutdown() });
+  const wsHandler = new WsHandler(server, ptyManager, projectStore, dataDir(), { onIdle: () => shutdown() });
 
   app.get('/api/active-editor', (_req, res) => {
     res.json(wsHandler.getEditorState());

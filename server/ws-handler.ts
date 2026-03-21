@@ -6,6 +6,7 @@ import { PortMonitor } from './port-monitor.js';
 import { ClaudeMonitor } from './claude-monitor.js';
 import { GitMonitor, type GitStatus } from './git-monitor.js';
 import { EditorMonitor } from './editor-monitor.js';
+import { InboxMonitor } from './inbox-monitor.js';
 
 // Client → Server
 type ClientMessage =
@@ -27,6 +28,7 @@ type ServerMessage =
   | { type: 'port:status'; ports: Record<string, number[]> }
   | { type: 'claude:status'; statuses: Record<string, 'active' | 'idle'> }
   | { type: 'git:branch'; branches: Record<string, GitStatus | null> }
+  | { type: 'inbox:paste'; files: string[] }
   | { type: 'error'; message: string };
 
 export interface WsHandlerOptions {
@@ -42,10 +44,11 @@ export class WsHandler {
   private claudeMonitor: ClaudeMonitor;
   private gitMonitor: GitMonitor;
   private editorMonitor: EditorMonitor;
+  private inboxMonitor: InboxMonitor;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
   private onIdle?: () => void;
 
-  constructor(server: Server, ptyManager: PtyManager, projectStore: ProjectStore, options?: WsHandlerOptions) {
+  constructor(server: Server, ptyManager: PtyManager, projectStore: ProjectStore, dataDir: string, options?: WsHandlerOptions) {
     this.ptyManager = ptyManager;
     this.projectStore = projectStore;
     this.onIdle = options?.onIdle;
@@ -60,6 +63,9 @@ export class WsHandler {
     });
     this.editorMonitor = new EditorMonitor((projectName) => {
       this.send({ type: 'editor:active', projectName });
+    });
+    this.inboxMonitor = new InboxMonitor(dataDir, (files) => {
+      this.send({ type: 'inbox:paste', files });
     });
 
     this.wss = new WebSocketServer({ noServer: true });
@@ -217,6 +223,7 @@ export class WsHandler {
     this.claudeMonitor.resume();
     this.gitMonitor.resume();
     this.editorMonitor.resume();
+    this.inboxMonitor.resume();
   }
 
   private pauseMonitors(): void {
@@ -224,6 +231,7 @@ export class WsHandler {
     this.claudeMonitor.pause();
     this.gitMonitor.pause();
     this.editorMonitor.pause();
+    this.inboxMonitor.pause();
   }
 
   destroy(): void {
@@ -231,6 +239,7 @@ export class WsHandler {
     this.claudeMonitor.destroy();
     this.gitMonitor.destroy();
     this.editorMonitor.destroy();
+    this.inboxMonitor.destroy();
   }
 
   private handlePtySpawn(terminalId: string, projectId: string, cwd: string): void {
