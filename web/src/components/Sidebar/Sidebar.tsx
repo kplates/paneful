@@ -420,15 +420,14 @@ export function Sidebar() {
         <div className="px-4 py-3 border-t border-[var(--border)]">
           <a
             href="https://www.npmjs.com/package/paneful"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-[var(--accent)] hover:underline"
+            onClick={(e) => { e.preventDefault(); sendMessage({ type: 'open:url', url: 'https://www.npmjs.com/package/paneful' }); }}
+            className="flex items-center gap-2 text-xs text-[var(--accent)] hover:underline cursor-pointer"
           >
             <ArrowUpCircle size={14} />
             <span>v{updateInfo.latest} available (current: v{updateInfo.current})</span>
           </a>
           <p className="text-[10px] text-[var(--text-muted)] mt-1">
-            paneful update
+            paneful update · <a href="https://github.com/kplates/paneful/blob/master/CHANGELOG.md" onClick={(e) => { e.preventDefault(); sendMessage({ type: 'open:url', url: 'https://github.com/kplates/paneful/blob/master/CHANGELOG.md' }); }} className="underline cursor-pointer hover:text-[var(--text-secondary)]">changelog</a>
           </p>
         </div>
       )}

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.13 — 2026-03-21
+
+- Add changelog link to update banner
+- Fix update banner links not opening in native app
+
 ## 0.9.12 — 2026-03-21
 
 - Improved editor sync tooltip messaging
