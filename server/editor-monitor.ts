@@ -49,6 +49,12 @@ func getWindowTitle(pid: pid_t) -> String {
     return title as? String ?? ""
 }
 
+// Quick AX trust check mode: print status and exit
+if CommandLine.arguments.contains("--check") {
+    print(AXIsProcessTrusted() ? "ok" : "needs-accessibility")
+    exit(0)
+}
+
 setbuf(stdout, nil)
 setbuf(stderr, nil)
 
@@ -121,16 +127,20 @@ RunLoop.main.run()
 
 export class EditorMonitor {
   private onChange: (projectName: string) => void;
+  private onStatusChange?: (needsAccessibility: boolean) => void;
   private proc: ChildProcess | null = null;
   private destroyed = false;
   private lineBuffer = '';
   private cache: { projectName: string | null; needsAccessibility?: boolean } = { projectName: null };
   private restartTimer: ReturnType<typeof setTimeout> | null = null;
+  private accessibilityProbeTimer: ReturnType<typeof setInterval> | null = null;
   private mode: 'native' | 'osascript' = 'osascript';
   private compiling = false;
+  private lastNeedsAccessibility = false;
 
-  constructor(onChange: (projectName: string) => void) {
+  constructor(onChange: (projectName: string) => void, onStatusChange?: (needsAccessibility: boolean) => void) {
     this.onChange = onChange;
+    this.onStatusChange = onStatusChange;
   }
 
   getState(): { projectName: string | null; needsAccessibility?: boolean } {
@@ -186,9 +196,35 @@ export class EditorMonitor {
     }
   }
 
+  private probeAccessibility(): void {
+    if (!existsSync(this.helperPath)) return;
+    execFile(this.helperPath, ['--check'],
+      { timeout: 3000 }, (err, stdout) => {
+        if (this.destroyed) return;
+        if (err) return;
+        const needs = stdout.trim() === 'needs-accessibility';
+        this.cache = { ...this.cache, needsAccessibility: needs || undefined };
+        this.emitStatusChange(needs);
+      });
+  }
+
+  private startAccessibilityProbe(): void {
+    this.probeAccessibility();
+    this.accessibilityProbeTimer = setInterval(() => this.probeAccessibility(), 5000);
+  }
+
+  private stopAccessibilityProbe(): void {
+    if (this.accessibilityProbeTimer) {
+      clearInterval(this.accessibilityProbeTimer);
+      this.accessibilityProbeTimer = null;
+    }
+  }
+
   resume(): void {
     if (this.destroyed || this.proc) return;
     if (process.platform !== 'darwin') return;
+
+    this.startAccessibilityProbe();
 
     if (this.isHelperCurrent()) {
       this.mode = 'native';
@@ -215,11 +251,13 @@ export class EditorMonitor {
   }
 
   pause(): void {
+    this.stopAccessibilityProbe();
     this.stopProcess();
   }
 
   destroy(): void {
     this.destroyed = true;
+    this.stopAccessibilityProbe();
     this.stopProcess();
   }
 
@@ -267,13 +305,10 @@ export class EditorMonitor {
 
     proc.on('error', (err) => {
       if (this.proc !== proc) return;
-      const msg = err.message || '';
-      const needsAccess = msg.includes('not allowed assistive access') || msg.includes('1719');
-      this.cache = { projectName: null, needsAccessibility: needsAccess || undefined };
       this.proc = null;
 
       if (currentMode === 'native') {
-        console.log(`[editor-monitor] native helper error, falling back to osascript: ${msg}`);
+        console.log(`[editor-monitor] native helper error, falling back to osascript: ${(err as Error).message}`);
         this.mode = 'osascript';
       }
       this.scheduleRestart();
@@ -288,6 +323,13 @@ export class EditorMonitor {
       }
       this.scheduleRestart();
     });
+  }
+
+  private emitStatusChange(needsAccessibility: boolean): void {
+    if (needsAccessibility !== this.lastNeedsAccessibility) {
+      this.lastNeedsAccessibility = needsAccessibility;
+      this.onStatusChange?.(needsAccessibility);
+    }
   }
 
   private feedData(chunk: Buffer): void {

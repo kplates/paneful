@@ -37,6 +37,8 @@ export function useWebSocket() {
 
     ws.onopen = () => {
       setConnectionStatus('connected');
+      // Tell server whether editor sync is enabled so it can start/stop the monitor
+      sendMessage({ type: 'editor:sync', enabled: useUIStore.getState().editorSyncEnabled });
     };
 
     ws.onmessage = (event) => {
@@ -133,6 +135,12 @@ export function useWebSocket() {
           return;
         }
 
+        // Handle editor accessibility status
+        if (msg.type === 'editor:status') {
+          useSessionStore.getState().setEditorNeedsAccessibility(msg.needsAccessibility);
+          return;
+        }
+
         // Handle active editor change (auto-focus project)
         if (msg.type === 'editor:active') {
           if (!useUIStore.getState().editorSyncEnabled) return;
@@ -156,6 +164,7 @@ export function useWebSocket() {
       useSessionStore.getState().setActivePorts({});
       useSessionStore.getState().setClaudeStatus({});
       useSessionStore.getState().setGitBranches({});
+      useSessionStore.getState().setEditorNeedsAccessibility(false);
       globalWs = null;
       reconnectTimeout.current = setTimeout(connect, 2000);
     };

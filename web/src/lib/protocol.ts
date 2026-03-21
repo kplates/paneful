@@ -7,7 +7,8 @@ export type ClientMessage =
   | { type: 'project:kill'; projectId: string }
   | { type: 'project:create'; projectId: string; name: string; cwd: string }
   | { type: 'project:remove'; projectId: string }
-  | { type: 'open:url'; url: string };
+  | { type: 'open:url'; url: string }
+  | { type: 'editor:sync'; enabled: boolean };
 
 // Server → Client
 export type ServerMessage =
@@ -15,6 +16,7 @@ export type ServerMessage =
   | { type: 'pty:exit'; terminalId: string; exitCode: number }
   | { type: 'project:spawned'; projectId: string; name: string; cwd: string }
   | { type: 'editor:active'; projectName: string }
+  | { type: 'editor:status'; needsAccessibility: boolean }
   | { type: 'port:status'; ports: Record<string, number[]> }
   | { type: 'claude:status'; statuses: Record<string, 'active' | 'idle'> }
   | { type: 'git:branch'; branches: Record<string, { branch: string; staged: number; modified: number; ahead: number; behind: number } | null> }

@@ -17,7 +17,8 @@ type ClientMessage =
   | { type: 'project:kill'; projectId: string }
   | { type: 'project:create'; projectId: string; name: string; cwd: string }
   | { type: 'project:remove'; projectId: string }
-  | { type: 'open:url'; url: string };
+  | { type: 'open:url'; url: string }
+  | { type: 'editor:sync'; enabled: boolean };
 
 // Server → Client
 type ServerMessage =
@@ -25,6 +26,7 @@ type ServerMessage =
   | { type: 'pty:exit'; terminalId: string; exitCode: number }
   | { type: 'project:spawned'; projectId: string; name: string; cwd: string }
   | { type: 'editor:active'; projectName: string }
+  | { type: 'editor:status'; needsAccessibility: boolean }
   | { type: 'port:status'; ports: Record<string, number[]> }
   | { type: 'claude:status'; statuses: Record<string, 'active' | 'idle'> }
   | { type: 'git:branch'; branches: Record<string, GitStatus | null> }
@@ -61,9 +63,14 @@ export class WsHandler {
     this.gitMonitor = new GitMonitor(projectStore, (branches) => {
       this.send({ type: 'git:branch', branches });
     });
-    this.editorMonitor = new EditorMonitor((projectName) => {
-      this.send({ type: 'editor:active', projectName });
-    });
+    this.editorMonitor = new EditorMonitor(
+      (projectName) => {
+        this.send({ type: 'editor:active', projectName });
+      },
+      (needsAccessibility) => {
+        this.send({ type: 'editor:status', needsAccessibility });
+      },
+    );
     this.inboxMonitor = new InboxMonitor(dataDir, (files) => {
       this.send({ type: 'inbox:paste', files });
     });
@@ -104,11 +111,6 @@ export class WsHandler {
       if (Object.keys(statuses).length > 0) {
         this.send({ type: 'claude:status', statuses });
       }
-      const editorState = this.editorMonitor.getState();
-      if (editorState.projectName) {
-        this.send({ type: 'editor:active', projectName: editorState.projectName });
-      }
-
       ws.on('message', (raw) => {
         try {
           const msg: ClientMessage = JSON.parse(raw.toString());
@@ -211,6 +213,24 @@ export class WsHandler {
         }
         break;
       }
+
+      case 'editor:sync': {
+        if (msg.enabled) {
+          this.editorMonitor.resume();
+          // Send cached state
+          const editorState = this.editorMonitor.getState();
+          if (editorState.projectName) {
+            this.send({ type: 'editor:active', projectName: editorState.projectName });
+          }
+          if (editorState.needsAccessibility) {
+            this.send({ type: 'editor:status', needsAccessibility: true });
+          }
+        } else {
+          this.editorMonitor.pause();
+          this.send({ type: 'editor:status', needsAccessibility: false });
+        }
+        break;
+      }
     }
   }
 
@@ -222,7 +242,7 @@ export class WsHandler {
     this.portMonitor.resume();
     this.claudeMonitor.resume();
     this.gitMonitor.resume();
-    this.editorMonitor.resume();
+    // Editor monitor is started on-demand via editor:sync message
     this.inboxMonitor.resume();
   }
 

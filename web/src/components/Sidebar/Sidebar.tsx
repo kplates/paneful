@@ -58,6 +58,7 @@ export function Sidebar() {
   const activePorts = useSessionStore((s) => s.activePorts);
   const claudeStatus = useSessionStore((s) => s.claudeStatus);
   const gitBranches = useSessionStore((s) => s.gitBranches);
+  const editorNeedsAccessibility = useSessionStore((s) => s.editorNeedsAccessibility);
   const favourites = useFavouriteStore((s) => s.favourites);
   const addFavourite = useFavouriteStore((s) => s.addFavourite);
   const updateFavourite = useFavouriteStore((s) => s.updateFavourite);
@@ -311,17 +312,25 @@ export function Sidebar() {
             {theme === 'light' ? <Sun size={14} /> : theme === 'dark' ? <Moon size={14} /> : <Monitor size={14} />}
           </button>
           <button
-            onClick={toggleEditorSync}
-            className={`p-1 rounded transition-colors ${
+            onClick={() => {
+              toggleEditorSync();
+              sendMessage({ type: 'editor:sync', enabled: !editorSyncEnabled });
+            }}
+            className={`relative p-1 rounded transition-colors ${
               editorSyncEnabled
                 ? 'text-[var(--accent)] hover:bg-[var(--surface-3)]'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)]'
             }`}
-            title={editorSyncEnabled
+            title={editorSyncEnabled && editorNeedsAccessibility
+              ? 'Editor sync needs Accessibility permission. Go to System Settings → Privacy & Security → Accessibility and add paneful-editor-helper (in ~/.paneful). If it\'s already listed, try toggling it off and on, or removing and re-adding it.'
+              : editorSyncEnabled
               ? 'Editor sync ON — auto-switches project based on your active editor. Click to disable.'
-              : 'Editor sync OFF — click to enable. Requires: (1) Paneful (or Terminal, if running from CLI) in System Settings → Privacy & Security → Accessibility, (2) Editor window title includes folder name (default in VS Code/Cursor). Note: after updating paneful, you may need to remove and re-add it in Accessibility settings.'}
+              : 'Editor sync OFF — click to enable. Requires Accessibility permission for paneful-editor-helper (in ~/.paneful). Go to System Settings → Privacy & Security → Accessibility. After updating paneful, you may need to remove and re-add it.'}
           >
             <MonitorSmartphone size={14} />
+            {editorSyncEnabled && editorNeedsAccessibility && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-yellow-500" />
+            )}
           </button>
           <button
             onClick={toggleGpuRendering}
