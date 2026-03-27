@@ -300,10 +300,16 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
       if (e.metaKey && e.key === 'p' && !e.altKey && !e.ctrlKey) {
         return false;
       }
-      // Let Shift+Arrow and Ctrl+Shift+Arrow pass through to our shortcut handler
+      // Ctrl+Shift+Arrow: let capture-phase handler move focus between panes
       if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) &&
-          e.shiftKey && !e.metaKey && !e.altKey) {
+          e.ctrlKey && e.shiftKey && !e.metaKey && !e.altKey) {
         return false;
+      }
+      // Shift+Arrow: let capture-phase handler swap panes, UNLESS a fullscreen
+      // app (vim, nano, less) is running (alternate screen buffer)
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key) &&
+          e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        return term.buffer.active.type === 'alternate';
       }
       return true;
     });

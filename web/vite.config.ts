@@ -18,5 +18,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    // Use terser instead of esbuild for minification.
+    // esbuild has a scope bug that mangles xterm v6's `const enum` IIFE
+    // in requestMode(), producing a reference to an undeclared variable
+    // and crashing the terminal parser (breaks vim, nano, etc).
+    minify: 'terser',
   },
 });

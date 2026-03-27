@@ -41,13 +41,17 @@ export function useKeyboardShortcuts() {
       }
 
       // Shift+Arrow: swap focused pane with adjacent
+      // Skip when a fullscreen terminal app (vim, nano, less, etc.) is running —
+      // detected by the terminal being on the alternate screen buffer.
       if (e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey && ['arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key)) {
+        const focusedId = useUIStore.getState().focusedTerminalId;
+        const session = focusedId ? useSessionStore.getState().sessions[focusedId] : null;
+        if (session?.terminal?.buffer.active.type === 'alternate') return;
         e.preventDefault();
         e.stopPropagation();
         const activeProjectId = useProjectStore.getState().activeProjectId;
         if (!activeProjectId) return;
         const layout = useLayoutStore.getState().getLayout(activeProjectId);
-        const focusedId = useUIStore.getState().focusedTerminalId;
         if (!focusedId || !layout) return;
         const dir = key === 'arrowleft' ? 'left' : key === 'arrowright' ? 'right' : key === 'arrowup' ? 'up' : 'down';
         const adjacent = getAdjacentTerminal(layout, focusedId, dir as 'left' | 'right' | 'up' | 'down');
