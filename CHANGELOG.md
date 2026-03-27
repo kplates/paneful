@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.15 — 2026-03-27
+
+- Fix terminal crash when running vim, nano, or any program that sends DECRQM escape sequences — caused by an esbuild minification bug mangling xterm v6's `const enum` pattern
+- Fix Shift+Arrow keys not working inside terminal editors (vim, nano, less) — Paneful now detects the alternate screen buffer and passes keys through to the terminal
+- Shift+Arrow pane swapping continues to work in normal shell mode
+- Switched build minifier from esbuild to terser
+
 ## 0.9.14 — 2026-03-21
 
 - VS Code extension published to the [Marketplace](https://marketplace.visualstudio.com/items?itemName=kplates.paneful-vscode)
