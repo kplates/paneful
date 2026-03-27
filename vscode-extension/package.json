@@ -2,7 +2,7 @@
   "name": "paneful-vscode",
   "displayName": "Paneful",
   "description": "Companion extension for Paneful — spawn projects and send file paths to Paneful terminals.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "kplates",
   "license": "MIT",
   "icon": "icon.png",
@@ -33,10 +33,49 @@
         "title": "Paneful: Send open file paths"
       },
       {
+        "command": "paneful.sendCurrentFile",
+        "title": "Paneful: Send current file path"
+      },
+      {
+        "command": "paneful.sendPath",
+        "title": "Paneful: Send path"
+      },
+      {
+        "command": "paneful.sendSelection",
+        "title": "Paneful: Send selection"
+      },
+      {
         "command": "paneful.spawnProject",
         "title": "Paneful: Spawn project"
       }
-    ]
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "paneful.sendSelection",
+          "when": "editorHasSelection",
+          "group": "paneful@1"
+        },
+        {
+          "command": "paneful.sendCurrentFile",
+          "group": "paneful@2"
+        },
+        {
+          "command": "paneful.sendOpenFiles",
+          "group": "paneful@3"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "paneful.sendPath",
+          "group": "paneful@1"
+        },
+        {
+          "command": "paneful.sendOpenFiles",
+          "group": "paneful@2"
+        }
+      ]
+    }
   },
   "scripts": {
     "build": "tsc",

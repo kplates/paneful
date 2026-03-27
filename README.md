@@ -97,10 +97,13 @@ A folder picker dialog lets you choose the install location (defaults to `/Appli
 
 Install the [Paneful extension](https://marketplace.visualstudio.com/items?itemName=kplates.paneful-vscode) from the VS Code Marketplace. Works with VS Code, Cursor, and other VS Code-based editors.
 
-**Commands** (via Command Palette):
+**Commands** (via Command Palette or right-click context menu):
 
 - **Paneful: Spawn project** — Creates or activates a Paneful project for the current workspace folder.
 - **Paneful: Send open file paths** — Sends all open editor file paths to the focused Paneful terminal.
+- **Paneful: Send current file path** — Sends the active editor's file path.
+- **Paneful: Send selection** — Sends selected text with file path and line numbers.
+- **Paneful: Send path** — Sends a file or folder path from the explorer.
 
 ### Updating
 
