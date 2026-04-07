@@ -1,6 +1,6 @@
 # Paneful
 
-A fast, GPU-accelerated terminal multiplexer that runs in your browser — or as a native macOS app. Split panes, organize projects, sync with your editor, and detect AI agents and dev servers automatically. One `npm install`, no config.
+A fast, GPU-accelerated terminal manager with split panes, project organization, editor sync, and automatic AI agent and dev server detection. Runs as a native macOS app or in the browser. One `npm install`, no config.
 
 **Website:** [paneful.dev](https://paneful.dev)
 

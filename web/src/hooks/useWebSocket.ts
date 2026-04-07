@@ -50,7 +50,18 @@ export function useWebSocket() {
         // because we write to the xterm buffer which persists.
         if (msg.type === 'pty:output') {
           const session = useSessionStore.getState().sessions[msg.terminalId];
-          session?.terminal?.write(msg.data);
+          if (session?.terminal) {
+            const term = session.terminal;
+            const buf = term.buffer.active;
+            // Was the user at (or near) the bottom before this write?
+            const atBottom = buf.viewportY >= buf.baseY - 1;
+            term.write(msg.data, () => {
+              // If they were at the bottom, keep them there — prevents
+              // Claude Code / React-Ink cursor repositioning from yanking
+              // the viewport to the top during streaming output.
+              if (atBottom) term.scrollToBottom();
+            });
+          }
 
           // If a pending command exists for this terminal (from favourite launch),
           // send it on the first output (shell prompt is ready)

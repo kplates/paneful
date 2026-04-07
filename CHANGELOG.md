@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.16
+
+- Fix terminal viewport jumping to the top during streaming output from Claude Code and other tools that use cursor repositioning (React-Ink) — the viewport now stays pinned to the bottom when the user is already scrolled down
+
 ## 0.9.15 — 2026-03-27
 
 - Fix terminal crash when running vim, nano, or any program that sends DECRQM escape sequences — caused by an esbuild minification bug mangling xterm v6's `const enum` pattern

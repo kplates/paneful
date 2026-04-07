@@ -1,6 +1,6 @@
 # Paneful for VS Code
 
-Companion extension for [Paneful](https://paneful.dev) — a terminal multiplexer for developers.
+Companion extension for [Paneful](https://paneful.dev) — a terminal manager for developers.
 
 ## Requirements
 

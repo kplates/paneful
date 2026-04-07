@@ -1,7 +1,7 @@
 {
   "name": "paneful",
-  "version": "0.9.15",
-  "description": "A fast, GPU-accelerated terminal multiplexer in your browser or as a native macOS app. Split panes, organize projects, sync with your editor, detect AI agents.",
+  "version": "0.9.16",
+  "description": "A fast, GPU-accelerated terminal manager with split panes, project organization, editor sync, and AI agent detection. Native macOS app or browser.",
   "type": "module",
   "bin": {
     "paneful": "./dist/server/index.js"
