@@ -100,6 +100,19 @@ export class PtyManager {
     return this.sessions.has(terminalId);
   }
 
+  /** Returns {pid, projectId} for every active PTY. Used to attribute listening sockets to projects. */
+  getProjectPids(): Array<{ pid: number; projectId: string }> {
+    const result: Array<{ pid: number; projectId: string }> = [];
+    for (const managed of this.sessions.values()) {
+      try {
+        result.push({ pid: managed.process.pid, projectId: managed.projectId });
+      } catch {
+        // PTY may have been killed
+      }
+    }
+    return result;
+  }
+
   /** Returns projectId → terminalIds[] for terminals running an AI coding agent. */
   getAgentProjects(): Map<string, string[]> {
     const result = new Map<string, string[]>();

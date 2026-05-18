@@ -155,6 +155,9 @@ npm run build
 
 # Run locally
 npm start
+
+# Install the local build globally (replaces any npm-published version)
+npm -g uninstall paneful; npm run build; npm install -g .; paneful --install-app
 ```
 
 Vite dev server proxies `/ws` and `/api` to `localhost:3000`. Open `http://localhost:5173` or use Chrome in app mode for full keyboard shortcut support:

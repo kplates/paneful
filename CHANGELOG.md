@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.17 — 2026-05-19
+
+- Rewrote dev server detection to use OS-level process ownership instead of scanning terminal text — eliminates false positives where Claude Code mentioning `localhost:3000` lit up the badge, and prevents unrelated processes on the same port from being attributed to the wrong project
+- Detection now polls `ps` + `lsof` and attributes a listening port to a project only if its owning process descends from one of the project's PTYs
+
 ## 0.9.16
 
 - Fix terminal viewport jumping to the top during streaming output from Claude Code and other tools that use cursor repositioning (React-Ink) — the viewport now stays pinned to the bottom when the user is already scrolled down
