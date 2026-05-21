@@ -67,6 +67,19 @@ Press `Cmd+P` to open the command palette. Quickly switch projects, launch favou
 
 The sidebar shows the current Git branch next to each project's working directory as a small pill badge. Updates automatically every 10 seconds. Non-git directories show no badge.
 
+### Source Control
+
+Press `Cmd+Shift+G` (or click the branch icon in the toolbar) to open the source control panel — a resizable right-side panel that shows the active project's working changes. Powered by `git status` + `fs.watch`, so updates are instant. Includes:
+
+- **Branch bar** with current branch, ahead/behind counts, and one-click pull (`--ff-only`) and push.
+- **File list** grouped by Staged Changes, Changes, Untracked, and Conflicted. Each row has hover actions for stage, unstage, discard, and "Open in editor" (uses your system's default app association).
+- **Multi-select** with Cmd-click (toggle) and Shift-click (range) for bulk stage/unstage/discard within a group.
+- **Diff view** — click any file to see the full file with line numbers, red/green backgrounds for added/removed lines, and syntax highlighting for ~25 languages (TypeScript, Python, Go, Rust, Swift, Java, C/C++, and more).
+- **Inline commit** message + button; auto-clears on success.
+- **Stash** — create (with optional message, includes untracked), apply, pop, or drop directly from the panel.
+
+The panel only polls its data when open, and the file watcher only runs while focused on the active project — zero overhead when collapsed.
+
 ### AI Agent Detection
 
 Automatically detects when Claude Code or Codex CLI is running in a Paneful terminal. A purple **AI** badge appears next to the project name in the sidebar — pulsing when the agent is actively working, dimmed when idle. Disappears instantly when the agent exits. Uses zero filesystem access; detection is purely in-memory via the PTY process name and terminal output timestamps.
@@ -131,6 +144,7 @@ Paneful checks for newer versions on npm and shows a notification in the sidebar
 | `Ctrl+Shift+Arrow` | Move focus to adjacent pane     |
 | `Shift+Arrow`      | Swap focused pane with adjacent |
 | `Cmd+D`            | Toggle sidebar                  |
+| `Cmd+Shift+G`      | Toggle source control panel     |
 | `Cmd+T`            | Cycle through layout presets    |
 | `Cmd+R`            | Auto reorganize panes           |
 

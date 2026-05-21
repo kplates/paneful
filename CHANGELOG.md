@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.9.18 — 2026-05-21
+
+- New **Source Control** panel (toggle with `Cmd+Shift+G` or the branch icon in the toolbar)
+  - Resizable right-side panel showing the active project's working changes
+  - Branch bar with ahead/behind counts and one-click pull (`--ff-only`) / push
+  - Staged Changes / Changes / Untracked / Conflicted groups with hover actions: stage, unstage, discard
+  - Multi-select with Cmd-click (toggle) and Shift-click (range) for bulk operations within a group
+  - Inline commit message + Commit button, auto-clears on success
+  - Stash list — create (with optional message, includes untracked), apply, pop, and drop directly from the panel
+  - "Open in default editor" action on every file row and in the diff header (uses the OS file association)
+- New **Diff view** designed for actual review work
+  - Whole-file context (not just hunks) — every line visible in place
+  - Per-line gutter line numbers (old + new), with `+`/`-` markers
+  - Red/green backgrounds for removed/added lines (palette-themed for light/dark)
+  - Syntax highlighting via Prism for ~25 common languages (TypeScript, Python, Go, Rust, Swift, Java, C/C++/Objective-C, PHP, Ruby, Kotlin, JSON, YAML, TOML, CSS/SCSS, HTML, SQL, Markdown, Bash, and more)
+- Powered by `fs.watch` (with a 15s safety poll) for near-instant updates while the panel is open; zero overhead when collapsed
+- Documented the local-install one-liner: `npm -g uninstall paneful; npm run build; npm install -g .; paneful --install-app`
+
 ## 0.9.17 — 2026-05-19
 
 - Rewrote dev server detection to use OS-level process ownership instead of scanning terminal text — eliminates false positives where Claude Code mentioning `localhost:3000` lit up the badge, and prevents unrelated processes on the same port from being attributed to the wrong project
