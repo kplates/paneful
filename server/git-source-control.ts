@@ -18,6 +18,7 @@ export interface SourceControlStatus {
   changes: SourceControlEntry[];
   untracked: SourceControlEntry[];
   conflicted: SourceControlEntry[];
+  stashes: StashEntry[];
 }
 
 export type DiffKind = 'staged' | 'unstaged' | 'untracked' | 'conflicted';
@@ -28,7 +29,24 @@ export interface DiffResult {
   truncated: boolean;
 }
 
-export type ActionKind = 'stage' | 'unstage' | 'discard' | 'commit';
+export type ActionKind =
+  | 'stage'
+  | 'unstage'
+  | 'discard'
+  | 'commit'
+  | 'push'
+  | 'pull'
+  | 'stash:create'
+  | 'stash:pop'
+  | 'stash:apply'
+  | 'stash:drop';
+
+export interface StashEntry {
+  /** Stash index (0 = most recent). Used for `stash@{N}` references. */
+  index: number;
+  message: string;
+  branch: string;
+}
 
 const SAFETY_POLL_MS = 15_000;
 const WATCH_DEBOUNCE_MS = 300;
@@ -36,6 +54,7 @@ const WATCH_DEBOUNCE_MS = 300;
 const DIFF_MAX_BYTES = 5_000_000;
 const DIFF_TIMEOUT_MS = 5_000;
 const ACTION_TIMEOUT_MS = 10_000;
+const NETWORK_TIMEOUT_MS = 120_000;
 // Force enough unified-diff context to cover any reasonable file
 const FULL_CONTEXT_FLAG = '-U99999';
 // Filenames/dirs in change events to ignore (lots of churn, no user-visible status impact)
@@ -186,6 +205,52 @@ export class GitSourceControl {
     return this.runAction(projectId, ['commit', '-m', message]);
   }
 
+  async push(projectId: string): Promise<{ ok: boolean; error?: string }> {
+    return this.runNetworkAction(projectId, ['push']);
+  }
+
+  async pull(projectId: string): Promise<{ ok: boolean; error?: string }> {
+    return this.runNetworkAction(projectId, ['pull', '--ff-only']);
+  }
+
+  async stashCreate(projectId: string, message: string): Promise<{ ok: boolean; error?: string }> {
+    const args = message.trim() ? ['stash', 'push', '-u', '-m', message] : ['stash', 'push', '-u'];
+    return this.runAction(projectId, args);
+  }
+
+  async stashPop(projectId: string, index: number): Promise<{ ok: boolean; error?: string }> {
+    return this.runAction(projectId, ['stash', 'pop', `stash@{${index}}`]);
+  }
+
+  async stashApply(projectId: string, index: number): Promise<{ ok: boolean; error?: string }> {
+    return this.runAction(projectId, ['stash', 'apply', `stash@{${index}}`]);
+  }
+
+  async stashDrop(projectId: string, index: number): Promise<{ ok: boolean; error?: string }> {
+    return this.runAction(projectId, ['stash', 'drop', `stash@{${index}}`]);
+  }
+
+  private async runNetworkAction(
+    projectId: string,
+    args: string[],
+  ): Promise<{ ok: boolean; error?: string }> {
+    const project = this.projectStore.list().find((p) => p.id === projectId);
+    if (!project) return { ok: false, error: 'project not found' };
+    try {
+      await execFileP('git', args, {
+        cwd: project.cwd,
+        timeout: NETWORK_TIMEOUT_MS,
+        env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+      });
+      this.poll();
+      return { ok: true };
+    } catch (e: unknown) {
+      const err = e as { stderr?: string; message?: string };
+      const msg = (err.stderr || err.message || 'unknown error').trim();
+      return { ok: false, error: msg };
+    }
+  }
+
   private async runAction(
     projectId: string,
     args: string[],
@@ -229,15 +294,34 @@ export class GitSourceControl {
 
   private async getStatus(cwd: string): Promise<SourceControlStatus | null> {
     try {
-      const { stdout } = await execFileP(
-        'git',
-        ['status', '--porcelain=v2', '--untracked-files=all'],
-        { cwd, timeout: 3000, maxBuffer: 4 * 1024 * 1024 },
-      );
-      return this.parseStatus(stdout);
+      const [statusRes, stashRes] = await Promise.all([
+        execFileP('git', ['status', '--porcelain=v2', '--untracked-files=all'], {
+          cwd,
+          timeout: 3000,
+          maxBuffer: 4 * 1024 * 1024,
+        }),
+        execFileP('git', ['stash', 'list'], { cwd, timeout: 2000, maxBuffer: 256 * 1024 }).catch(
+          () => ({ stdout: '' }),
+        ),
+      ]);
+      const status = this.parseStatus(statusRes.stdout);
+      status.stashes = this.parseStashes(stashRes.stdout);
+      return status;
     } catch {
       return null;
     }
+  }
+
+  private parseStashes(stdout: string): StashEntry[] {
+    const out: StashEntry[] = [];
+    for (const line of stdout.split('\n')) {
+      if (!line) continue;
+      // "stash@{0}: WIP on master: abc1234 commit subject" OR "stash@{0}: On master: my message"
+      const m = line.match(/^stash@\{(\d+)\}: (?:WIP )?[oO]n (\S+?): (?:[0-9a-f]+ )?(.+)$/);
+      if (!m) continue;
+      out.push({ index: parseInt(m[1], 10), branch: m[2], message: m[3] });
+    }
+    return out;
   }
 
   private parseStatus(stdout: string): SourceControlStatus {
@@ -303,7 +387,7 @@ export class GitSourceControl {
       }
     }
 
-    return { staged, changes, untracked, conflicted };
+    return { staged, changes, untracked, conflicted, stashes: [] };
   }
 
   private async getDiff(cwd: string, file: string, kind: DiffKind): Promise<DiffResult> {
@@ -347,8 +431,19 @@ export class GitSourceControl {
       this.entriesEqual(a.staged, b.staged) &&
       this.entriesEqual(a.changes, b.changes) &&
       this.entriesEqual(a.untracked, b.untracked) &&
-      this.entriesEqual(a.conflicted, b.conflicted)
+      this.entriesEqual(a.conflicted, b.conflicted) &&
+      this.stashesEqual(a.stashes, b.stashes)
     );
+  }
+
+  private stashesEqual(a: StashEntry[], b: StashEntry[]): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i].index !== b[i].index || a[i].message !== b[i].message || a[i].branch !== b[i].branch) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private entriesEqual(a: SourceControlEntry[], b: SourceControlEntry[]): boolean {

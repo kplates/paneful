@@ -32,7 +32,13 @@ type ClientMessage =
   | { type: 'sc:stage'; projectId: string; files: string[] }
   | { type: 'sc:unstage'; projectId: string; files: string[] }
   | { type: 'sc:discard'; projectId: string; trackedFiles: string[]; untrackedFiles: string[] }
-  | { type: 'sc:commit'; projectId: string; message: string };
+  | { type: 'sc:commit'; projectId: string; message: string }
+  | { type: 'sc:push'; projectId: string }
+  | { type: 'sc:pull'; projectId: string }
+  | { type: 'sc:stash:create'; projectId: string; message: string }
+  | { type: 'sc:stash:pop'; projectId: string; index: number }
+  | { type: 'sc:stash:apply'; projectId: string; index: number }
+  | { type: 'sc:stash:drop'; projectId: string; index: number };
 
 // Server → Client
 type ServerMessage =
@@ -339,6 +345,54 @@ export class WsHandler {
         const { projectId, message } = msg;
         this.sourceControl.commit(projectId, message).then((res) => {
           this.send({ type: 'sc:action:result', projectId, action: 'commit', ok: res.ok, error: res.error });
+        });
+        break;
+      }
+
+      case 'sc:push': {
+        const { projectId } = msg;
+        this.sourceControl.push(projectId).then((res) => {
+          this.send({ type: 'sc:action:result', projectId, action: 'push', ok: res.ok, error: res.error });
+        });
+        break;
+      }
+
+      case 'sc:pull': {
+        const { projectId } = msg;
+        this.sourceControl.pull(projectId).then((res) => {
+          this.send({ type: 'sc:action:result', projectId, action: 'pull', ok: res.ok, error: res.error });
+        });
+        break;
+      }
+
+      case 'sc:stash:create': {
+        const { projectId, message } = msg;
+        this.sourceControl.stashCreate(projectId, message).then((res) => {
+          this.send({ type: 'sc:action:result', projectId, action: 'stash:create', ok: res.ok, error: res.error });
+        });
+        break;
+      }
+
+      case 'sc:stash:pop': {
+        const { projectId, index } = msg;
+        this.sourceControl.stashPop(projectId, index).then((res) => {
+          this.send({ type: 'sc:action:result', projectId, action: 'stash:pop', ok: res.ok, error: res.error });
+        });
+        break;
+      }
+
+      case 'sc:stash:apply': {
+        const { projectId, index } = msg;
+        this.sourceControl.stashApply(projectId, index).then((res) => {
+          this.send({ type: 'sc:action:result', projectId, action: 'stash:apply', ok: res.ok, error: res.error });
+        });
+        break;
+      }
+
+      case 'sc:stash:drop': {
+        const { projectId, index } = msg;
+        this.sourceControl.stashDrop(projectId, index).then((res) => {
+          this.send({ type: 'sc:action:result', projectId, action: 'stash:drop', ok: res.ok, error: res.error });
         });
         break;
       }

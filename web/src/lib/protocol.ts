@@ -6,15 +6,32 @@ export interface ScEntry {
   status: ScEntryStatus;
 }
 
+export interface ScStashEntry {
+  index: number;
+  message: string;
+  branch: string;
+}
+
 export interface ScStatus {
   staged: ScEntry[];
   changes: ScEntry[];
   untracked: ScEntry[];
   conflicted: ScEntry[];
+  stashes: ScStashEntry[];
 }
 
 export type ScDiffKind = 'staged' | 'unstaged' | 'untracked' | 'conflicted';
-export type ScAction = 'stage' | 'unstage' | 'discard' | 'commit';
+export type ScAction =
+  | 'stage'
+  | 'unstage'
+  | 'discard'
+  | 'commit'
+  | 'push'
+  | 'pull'
+  | 'stash:create'
+  | 'stash:pop'
+  | 'stash:apply'
+  | 'stash:drop';
 
 // Client → Server
 export type ClientMessage =
@@ -33,7 +50,13 @@ export type ClientMessage =
   | { type: 'sc:stage'; projectId: string; files: string[] }
   | { type: 'sc:unstage'; projectId: string; files: string[] }
   | { type: 'sc:discard'; projectId: string; trackedFiles: string[]; untrackedFiles: string[] }
-  | { type: 'sc:commit'; projectId: string; message: string };
+  | { type: 'sc:commit'; projectId: string; message: string }
+  | { type: 'sc:push'; projectId: string }
+  | { type: 'sc:pull'; projectId: string }
+  | { type: 'sc:stash:create'; projectId: string; message: string }
+  | { type: 'sc:stash:pop'; projectId: string; index: number }
+  | { type: 'sc:stash:apply'; projectId: string; index: number }
+  | { type: 'sc:stash:drop'; projectId: string; index: number };
 
 // Server → Client
 export type ServerMessage =
