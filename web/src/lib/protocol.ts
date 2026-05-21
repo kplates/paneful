@@ -1,3 +1,21 @@
+export type ScEntryStatus = 'M' | 'A' | 'D' | 'R' | 'C' | 'U' | '?';
+
+export interface ScEntry {
+  path: string;
+  oldPath?: string;
+  status: ScEntryStatus;
+}
+
+export interface ScStatus {
+  staged: ScEntry[];
+  changes: ScEntry[];
+  untracked: ScEntry[];
+  conflicted: ScEntry[];
+}
+
+export type ScDiffKind = 'staged' | 'unstaged' | 'untracked' | 'conflicted';
+export type ScAction = 'stage' | 'unstage' | 'discard' | 'commit';
+
 // Client → Server
 export type ClientMessage =
   | { type: 'pty:spawn'; terminalId: string; projectId: string; cwd: string }
@@ -8,7 +26,14 @@ export type ClientMessage =
   | { type: 'project:create'; projectId: string; name: string; cwd: string }
   | { type: 'project:remove'; projectId: string }
   | { type: 'open:url'; url: string }
-  | { type: 'editor:sync'; enabled: boolean };
+  | { type: 'open:file'; projectId: string; path: string }
+  | { type: 'editor:sync'; enabled: boolean }
+  | { type: 'sc:set-active'; projectId: string | null }
+  | { type: 'sc:diff:request'; projectId: string; file: string; kind: ScDiffKind }
+  | { type: 'sc:stage'; projectId: string; files: string[] }
+  | { type: 'sc:unstage'; projectId: string; files: string[] }
+  | { type: 'sc:discard'; projectId: string; trackedFiles: string[]; untrackedFiles: string[] }
+  | { type: 'sc:commit'; projectId: string; message: string };
 
 // Server → Client
 export type ServerMessage =
@@ -21,4 +46,21 @@ export type ServerMessage =
   | { type: 'claude:status'; statuses: Record<string, 'active' | 'idle'> }
   | { type: 'git:branch'; branches: Record<string, { branch: string; staged: number; modified: number; ahead: number; behind: number } | null> }
   | { type: 'inbox:paste'; files: string[] }
+  | { type: 'sc:status'; projectId: string; status: ScStatus | null }
+  | {
+      type: 'sc:diff';
+      projectId: string;
+      file: string;
+      kind: ScDiffKind;
+      diff: string;
+      binary: boolean;
+      truncated: boolean;
+    }
+  | {
+      type: 'sc:action:result';
+      projectId: string;
+      action: ScAction;
+      ok: boolean;
+      error?: string;
+    }
   | { type: 'error'; message: string };

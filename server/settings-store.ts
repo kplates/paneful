@@ -7,6 +7,8 @@ export interface Settings {
     theme: string;
     sidebarWidth: number;
     editorSyncEnabled: boolean;
+    sourceControlOpen: boolean;
+    sourceControlWidth: number;
   };
   activeProjectId: string | null;
 }
@@ -17,6 +19,8 @@ const DEFAULTS: Settings = {
     theme: 'system',
     sidebarWidth: 224,
     editorSyncEnabled: true,
+    sourceControlOpen: false,
+    sourceControlWidth: 360,
   },
   activeProjectId: null,
 };
@@ -38,6 +42,8 @@ export class SettingsStore {
             theme: raw.ui?.theme ?? DEFAULTS.ui.theme,
             sidebarWidth: raw.ui?.sidebarWidth ?? DEFAULTS.ui.sidebarWidth,
             editorSyncEnabled: raw.ui?.editorSyncEnabled ?? DEFAULTS.ui.editorSyncEnabled,
+            sourceControlOpen: raw.ui?.sourceControlOpen ?? DEFAULTS.ui.sourceControlOpen,
+            sourceControlWidth: raw.ui?.sourceControlWidth ?? DEFAULTS.ui.sourceControlWidth,
           },
           activeProjectId: raw.activeProjectId ?? DEFAULTS.activeProjectId,
         };

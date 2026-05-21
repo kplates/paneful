@@ -2,10 +2,12 @@ import React, { useCallback, useEffect } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { useEditorFocus } from './hooks/useEditorFocus';
+import { useSourceControlSync } from './hooks/useSourceControlSync';
 import { useProjectStore } from './stores/projectStore';
 import { useLayoutStore } from './stores/layoutStore';
 import { useUIStore } from './stores/uiStore';
 import { useFavouriteStore } from './stores/favouriteStore';
+import { hydrateSourceControlFromServer } from './stores/sourceControlStore';
 import { getTerminalIds } from './lib/layout-engine';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { Toolbar } from './components/Toolbar/Toolbar';
@@ -13,17 +15,20 @@ import { TerminalGrid } from './components/TerminalGrid/TerminalGrid';
 import { EmptyState } from './components/EmptyState';
 import { SyncToast } from './components/SyncToast';
 import { CommandPalette } from './components/CommandPalette';
+import { SourceControlPanel } from './components/SourceControl/SourceControlPanel';
 import { Direction } from './lib/layout-engine';
 
 export function App() {
   useWebSocket();
   useKeyboardShortcuts();
   useEditorFocus();
+  useSourceControlSync();
 
   useEffect(() => {
     useProjectStore.getState().hydrateFromServer();
     useFavouriteStore.getState().hydrateFromServer();
     useUIStore.getState().hydrateFromServer();
+    hydrateSourceControlFromServer();
   }, []);
 
   const activeProjectId = useProjectStore((s) => s.activeProjectId);
@@ -88,6 +93,8 @@ export function App() {
           )}
         </div>
       </div>
+
+      <SourceControlPanel />
     </div>
   );
 }

@@ -8,11 +8,15 @@ import {
   PanelTop,
   Grid2X2,
   PanelLeftOpen,
+  PanelRightOpen,
   Info,
   LayoutDashboard,
   Star,
+  GitBranch,
 } from 'lucide-react';
 import { useUIStore } from '../../stores/uiStore';
+import { useSourceControlStore } from '../../stores/sourceControlStore';
+import { useSessionStore } from '../../stores/sessionStore';
 import { useProjectStore } from '../../stores/projectStore';
 import { useLayoutStore } from '../../stores/layoutStore';
 import { useFavouriteStore, TerminalSlot } from '../../stores/favouriteStore';
@@ -156,6 +160,8 @@ export function Toolbar({ onNewPane }: ToolbarProps) {
 
       <div className="flex-1" />
 
+      <SourceControlToggle />
+
       {/* Keyboard shortcuts */}
       <button
         onClick={() => setShortcutsOpen(true)}
@@ -175,5 +181,31 @@ export function Toolbar({ onNewPane }: ToolbarProps) {
 
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
     </div>
+  );
+}
+
+function SourceControlToggle() {
+  const panelOpen = useSourceControlStore((s) => s.panelOpen);
+  const togglePanel = useSourceControlStore((s) => s.togglePanel);
+  const activeProjectId = useProjectStore((s) => s.activeProjectId);
+  const gitBranches = useSessionStore((s) => s.gitBranches);
+  const branch = activeProjectId ? gitBranches[activeProjectId] : null;
+  const changeCount = branch ? branch.staged + branch.modified : 0;
+
+  return (
+    <button
+      onClick={togglePanel}
+      className={`p-1.5 rounded transition-colors flex items-center gap-1 ${
+        panelOpen
+          ? 'text-[var(--accent)] bg-[var(--surface-3)]'
+          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-3)]'
+      }`}
+      title="Source control (Cmd+Shift+G)"
+    >
+      {panelOpen ? <PanelRightOpen size={14} /> : <GitBranch size={14} />}
+      {changeCount > 0 && (
+        <span className="text-[10px] font-semibold leading-none">{changeCount}</span>
+      )}
+    </button>
   );
 }

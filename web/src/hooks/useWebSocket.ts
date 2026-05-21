@@ -4,6 +4,7 @@ import { useSessionStore } from '../stores/sessionStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useLayoutStore } from '../stores/layoutStore';
 import { useUIStore } from '../stores/uiStore';
+import { useSourceControlStore, diffCacheKey } from '../stores/sourceControlStore';
 import { getTerminalIds } from '../lib/layout-engine';
 import { cleanupTerminal, consumePendingCommand } from './useTerminal';
 
@@ -149,6 +150,32 @@ export function useWebSocket() {
         // Handle editor accessibility status
         if (msg.type === 'editor:status') {
           useSessionStore.getState().setEditorNeedsAccessibility(msg.needsAccessibility);
+          return;
+        }
+
+        // Source control status update
+        if (msg.type === 'sc:status') {
+          useSourceControlStore.getState().setStatus(msg.projectId, msg.status);
+          return;
+        }
+
+        // Source control diff response
+        if (msg.type === 'sc:diff') {
+          const key = diffCacheKey(msg.projectId, msg.file, msg.kind);
+          useSourceControlStore.getState().setDiff(key, {
+            diff: msg.diff,
+            binary: msg.binary,
+            truncated: msg.truncated,
+          });
+          return;
+        }
+
+        // Source control action result
+        if (msg.type === 'sc:action:result') {
+          useSourceControlStore.getState().setActionResult(msg.action, msg.ok, msg.error);
+          if (msg.ok && msg.action === 'commit') {
+            useSourceControlStore.getState().setCommitDraft(msg.projectId, '');
+          }
           return;
         }
 

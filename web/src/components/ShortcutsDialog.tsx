@@ -16,6 +16,7 @@ const shortcuts: { keys: string[]; action: string }[] = [
   { keys: ['⌘', '⇧', 'N'], action: 'New pane (horizontal)' },
   { keys: ['⌘', 'W'], action: 'Close pane' },
   { keys: ['⌘', 'D'], action: 'Toggle sidebar' },
+  { keys: ['⌘', '⇧', 'G'], action: 'Toggle source control' },
   { keys: ['⌘', 'T'], action: 'Cycle layout' },
   { keys: ['⌘', 'R'], action: 'Auto reorganize' },
   { keys: ['⌘', '1-9'], action: 'Focus pane by number' },

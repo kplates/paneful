@@ -3,6 +3,7 @@ import { useUIStore } from '../stores/uiStore';
 import { useLayoutStore } from '../stores/layoutStore';
 import { useProjectStore } from '../stores/projectStore';
 import { useSessionStore } from '../stores/sessionStore';
+import { useSourceControlStore } from '../stores/sourceControlStore';
 import { sendMessage } from './useWebSocket';
 import { cleanupTerminal } from './useTerminal';
 import { getTerminalIds, getAdjacentTerminal, applyPreset } from '../lib/layout-engine';
@@ -10,7 +11,7 @@ import type { PresetName } from '../lib/layout-engine';
 
 // Keys we need to hijack from the browser — must preventDefault in capture phase
 // BEFORE the browser's default handler fires
-const HIJACKED_KEYS = new Set(['n', 'w', 't', 'd', 'r', 'f', 'p']);
+const HIJACKED_KEYS = new Set(['n', 'w', 't', 'd', 'r', 'f', 'p', 'g']);
 
 export function useKeyboardShortcuts() {
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
@@ -125,6 +126,12 @@ export function useKeyboardShortcuts() {
       // Cmd+D: toggle sidebar
       if (key === 'd' && !e.shiftKey) {
         toggleSidebar();
+        return;
+      }
+
+      // Cmd+Shift+G: toggle source control panel
+      if (key === 'g' && e.shiftKey) {
+        useSourceControlStore.getState().togglePanel();
         return;
       }
 

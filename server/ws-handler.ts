@@ -6,6 +6,12 @@ import { ProjectStore, newProject } from './project-store.js';
 import { PortMonitor } from './port-monitor.js';
 import { ClaudeMonitor } from './claude-monitor.js';
 import { GitMonitor, type GitStatus } from './git-monitor.js';
+import {
+  GitSourceControl,
+  type SourceControlStatus,
+  type DiffKind,
+  type ActionKind,
+} from './git-source-control.js';
 import { EditorMonitor } from './editor-monitor.js';
 import { InboxMonitor } from './inbox-monitor.js';
 
@@ -19,7 +25,14 @@ type ClientMessage =
   | { type: 'project:create'; projectId: string; name: string; cwd: string }
   | { type: 'project:remove'; projectId: string }
   | { type: 'open:url'; url: string }
-  | { type: 'editor:sync'; enabled: boolean };
+  | { type: 'open:file'; projectId: string; path: string }
+  | { type: 'editor:sync'; enabled: boolean }
+  | { type: 'sc:set-active'; projectId: string | null }
+  | { type: 'sc:diff:request'; projectId: string; file: string; kind: DiffKind }
+  | { type: 'sc:stage'; projectId: string; files: string[] }
+  | { type: 'sc:unstage'; projectId: string; files: string[] }
+  | { type: 'sc:discard'; projectId: string; trackedFiles: string[]; untrackedFiles: string[] }
+  | { type: 'sc:commit'; projectId: string; message: string };
 
 // Server → Client
 type ServerMessage =
@@ -32,6 +45,23 @@ type ServerMessage =
   | { type: 'claude:status'; statuses: Record<string, 'active' | 'idle'> }
   | { type: 'git:branch'; branches: Record<string, GitStatus | null> }
   | { type: 'inbox:paste'; files: string[] }
+  | { type: 'sc:status'; projectId: string; status: SourceControlStatus | null }
+  | {
+      type: 'sc:diff';
+      projectId: string;
+      file: string;
+      kind: DiffKind;
+      diff: string;
+      binary: boolean;
+      truncated: boolean;
+    }
+  | {
+      type: 'sc:action:result';
+      projectId: string;
+      action: ActionKind;
+      ok: boolean;
+      error?: string;
+    }
   | { type: 'error'; message: string };
 
 export interface WsHandlerOptions {
@@ -46,6 +76,7 @@ export class WsHandler {
   private portMonitor: PortMonitor;
   private claudeMonitor: ClaudeMonitor;
   private gitMonitor: GitMonitor;
+  private sourceControl: GitSourceControl;
   private editorMonitor: EditorMonitor;
   private inboxMonitor: InboxMonitor;
   private idleTimer: ReturnType<typeof setTimeout> | null = null;
@@ -63,6 +94,9 @@ export class WsHandler {
     });
     this.gitMonitor = new GitMonitor(projectStore, (branches) => {
       this.send({ type: 'git:branch', branches });
+    });
+    this.sourceControl = new GitSourceControl(projectStore, (projectId, status) => {
+      this.send({ type: 'sc:status', projectId, status });
     });
     this.editorMonitor = new EditorMonitor(
       (projectName) => {
@@ -222,6 +256,21 @@ export class WsHandler {
         break;
       }
 
+      case 'open:file': {
+        const project = this.projectStore.list().find((p) => p.id === msg.projectId);
+        if (!project) break;
+        // Resolve and guard against path traversal
+        import('node:path').then((path) => {
+          const abs = path.resolve(project.cwd, msg.path);
+          const projectRoot = path.resolve(project.cwd);
+          if (abs !== projectRoot && !abs.startsWith(projectRoot + path.sep)) return;
+          import('open').then(({ default: open }) => {
+            open(abs).catch(() => {});
+          });
+        });
+        break;
+      }
+
       case 'editor:sync': {
         if (msg.enabled) {
           this.editorMonitor.resume();
@@ -239,6 +288,60 @@ export class WsHandler {
         }
         break;
       }
+
+      case 'sc:set-active': {
+        this.sourceControl.setActive(msg.projectId);
+        break;
+      }
+
+      case 'sc:diff:request': {
+        const { projectId, file, kind } = msg;
+        this.sourceControl.requestDiff(projectId, file, kind).then((result) => {
+          if (!result) return;
+          this.send({
+            type: 'sc:diff',
+            projectId,
+            file,
+            kind,
+            diff: result.diff,
+            binary: result.binary,
+            truncated: result.truncated,
+          });
+        });
+        break;
+      }
+
+      case 'sc:stage': {
+        const { projectId, files } = msg;
+        this.sourceControl.stage(projectId, files).then((res) => {
+          this.send({ type: 'sc:action:result', projectId, action: 'stage', ok: res.ok, error: res.error });
+        });
+        break;
+      }
+
+      case 'sc:unstage': {
+        const { projectId, files } = msg;
+        this.sourceControl.unstage(projectId, files).then((res) => {
+          this.send({ type: 'sc:action:result', projectId, action: 'unstage', ok: res.ok, error: res.error });
+        });
+        break;
+      }
+
+      case 'sc:discard': {
+        const { projectId, trackedFiles, untrackedFiles } = msg;
+        this.sourceControl.discard(projectId, trackedFiles, untrackedFiles).then((res) => {
+          this.send({ type: 'sc:action:result', projectId, action: 'discard', ok: res.ok, error: res.error });
+        });
+        break;
+      }
+
+      case 'sc:commit': {
+        const { projectId, message } = msg;
+        this.sourceControl.commit(projectId, message).then((res) => {
+          this.send({ type: 'sc:action:result', projectId, action: 'commit', ok: res.ok, error: res.error });
+        });
+        break;
+      }
     }
   }
 
@@ -250,6 +353,7 @@ export class WsHandler {
     this.portMonitor.resume();
     this.claudeMonitor.resume();
     this.gitMonitor.resume();
+    this.sourceControl.resume();
     // Editor monitor is started on-demand via editor:sync message
     this.inboxMonitor.resume();
   }
@@ -258,6 +362,7 @@ export class WsHandler {
     this.portMonitor.pause();
     this.claudeMonitor.pause();
     this.gitMonitor.pause();
+    this.sourceControl.pause();
     this.editorMonitor.pause();
     this.inboxMonitor.pause();
   }
@@ -266,6 +371,7 @@ export class WsHandler {
     this.portMonitor.destroy();
     this.claudeMonitor.destroy();
     this.gitMonitor.destroy();
+    this.sourceControl.destroy();
     this.editorMonitor.destroy();
     this.inboxMonitor.destroy();
   }

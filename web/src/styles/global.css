@@ -119,3 +119,87 @@ html, body, #root {
 .animate-fade-in {
   animation: fadeIn 150ms ease-out;
 }
+
+/* Prism syntax highlighting — palette-aware, dark/light theme via CSS vars */
+.sc-code {
+  color: var(--text-primary);
+}
+.sc-code .token.comment,
+.sc-code .token.prolog,
+.sc-code .token.doctype,
+.sc-code .token.cdata {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.sc-code .token.punctuation { color: var(--text-secondary); }
+.sc-code .token.namespace { opacity: 0.7; }
+.sc-code .token.property,
+.sc-code .token.tag,
+.sc-code .token.constant,
+.sc-code .token.symbol,
+.sc-code .token.deleted { color: #e5484d; }
+.sc-code .token.boolean,
+.sc-code .token.number { color: #f5a524; }
+.sc-code .token.selector,
+.sc-code .token.attr-name,
+.sc-code .token.string,
+.sc-code .token.char,
+.sc-code .token.builtin,
+.sc-code .token.inserted { color: #30a46c; }
+.sc-code .token.operator,
+.sc-code .token.entity,
+.sc-code .token.url,
+.sc-code .language-css .token.string,
+.sc-code .style .token.string { color: #5b5bd6; }
+.sc-code .token.atrule,
+.sc-code .token.attr-value,
+.sc-code .token.keyword { color: #c39bff; }
+.sc-code .token.function,
+.sc-code .token.class-name { color: #5eb1ff; }
+.sc-code .token.regex,
+.sc-code .token.important,
+.sc-code .token.variable { color: #f5a524; }
+.sc-code .token.important,
+.sc-code .token.bold { font-weight: bold; }
+.sc-code .token.italic { font-style: italic; }
+.sc-code .token.entity { cursor: help; }
+
+[data-theme="light"] .sc-code .token.property,
+[data-theme="light"] .sc-code .token.tag,
+[data-theme="light"] .sc-code .token.constant,
+[data-theme="light"] .sc-code .token.symbol,
+[data-theme="light"] .sc-code .token.deleted { color: #b91c1c; }
+[data-theme="light"] .sc-code .token.boolean,
+[data-theme="light"] .sc-code .token.number { color: #b45309; }
+[data-theme="light"] .sc-code .token.selector,
+[data-theme="light"] .sc-code .token.attr-name,
+[data-theme="light"] .sc-code .token.string,
+[data-theme="light"] .sc-code .token.char,
+[data-theme="light"] .sc-code .token.builtin,
+[data-theme="light"] .sc-code .token.inserted { color: #047857; }
+[data-theme="light"] .sc-code .token.atrule,
+[data-theme="light"] .sc-code .token.attr-value,
+[data-theme="light"] .sc-code .token.keyword { color: #6d28d9; }
+[data-theme="light"] .sc-code .token.function,
+[data-theme="light"] .sc-code .token.class-name { color: #1e40af; }
+
+@media (prefers-color-scheme: light) {
+  [data-theme="system"] .sc-code .token.property,
+  [data-theme="system"] .sc-code .token.tag,
+  [data-theme="system"] .sc-code .token.constant,
+  [data-theme="system"] .sc-code .token.symbol,
+  [data-theme="system"] .sc-code .token.deleted { color: #b91c1c; }
+  [data-theme="system"] .sc-code .token.boolean,
+  [data-theme="system"] .sc-code .token.number { color: #b45309; }
+  [data-theme="system"] .sc-code .token.selector,
+  [data-theme="system"] .sc-code .token.attr-name,
+  [data-theme="system"] .sc-code .token.string,
+  [data-theme="system"] .sc-code .token.char,
+  [data-theme="system"] .sc-code .token.builtin,
+  [data-theme="system"] .sc-code .token.inserted { color: #047857; }
+  [data-theme="system"] .sc-code .token.atrule,
+  [data-theme="system"] .sc-code .token.attr-value,
+  [data-theme="system"] .sc-code .token.keyword { color: #6d28d9; }
+  [data-theme="system"] .sc-code .token.function,
+  [data-theme="system"] .sc-code .token.class-name { color: #1e40af; }
+}
