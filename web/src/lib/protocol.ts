@@ -20,6 +20,26 @@ export interface ScStatus {
   stashes: ScStashEntry[];
 }
 
+export interface ScheduledJob {
+  id: string;
+  name: string;
+  cron: string;
+  command: string;
+  cwd: string;
+  enabled: boolean;
+  createdAt: number;
+}
+
+export interface ScheduledRun {
+  id: string;
+  jobId: string;
+  startedAt: number;
+  finishedAt: number | null;
+  exitCode: number | null;
+  terminalId: string | null;
+  paused?: boolean;
+}
+
 export type ScDiffKind = 'staged' | 'unstaged' | 'untracked' | 'conflicted';
 export type ScAction =
   | 'stage'
@@ -35,7 +55,7 @@ export type ScAction =
 
 // Client → Server
 export type ClientMessage =
-  | { type: 'pty:spawn'; terminalId: string; projectId: string; cwd: string }
+  | { type: 'pty:spawn'; terminalId: string; projectId: string; cwd: string; command?: string }
   | { type: 'pty:input'; terminalId: string; data: string }
   | { type: 'pty:resize'; terminalId: string; cols: number; rows: number }
   | { type: 'pty:kill'; terminalId: string }
@@ -56,7 +76,26 @@ export type ClientMessage =
   | { type: 'sc:stash:create'; projectId: string; message: string }
   | { type: 'sc:stash:pop'; projectId: string; index: number }
   | { type: 'sc:stash:apply'; projectId: string; index: number }
-  | { type: 'sc:stash:drop'; projectId: string; index: number };
+  | { type: 'sc:stash:drop'; projectId: string; index: number }
+  | { type: 'schedule:list' }
+  | { type: 'schedule:runs:list'; jobId?: string }
+  | {
+      type: 'schedule:create';
+      job: { name: string; cron: string; command: string; cwd: string; enabled: boolean };
+    }
+  | { type: 'schedule:run:log:request'; runId: string }
+  | { type: 'schedule:update'; job: ScheduledJob }
+  | { type: 'schedule:delete'; jobId: string }
+  | { type: 'schedule:toggle'; jobId: string; enabled: boolean }
+  | { type: 'schedule:run-now'; jobId: string }
+  | { type: 'schedule:run:pause'; runId: string }
+  | { type: 'schedule:run:resume'; runId: string }
+  | { type: 'schedule:run:remove'; runId: string }
+  | { type: 'schedule:run:kill'; runId: string }
+  | { type: 'schedule:run:attach'; runId: string }
+  | { type: 'schedule:run:detach'; runId: string }
+  | { type: 'schedule:run:input'; runId: string; data: string }
+  | { type: 'schedule:run:resize'; runId: string; cols: number; rows: number };
 
 // Server → Client
 export type ServerMessage =
@@ -86,4 +125,15 @@ export type ServerMessage =
       ok: boolean;
       error?: string;
     }
+  | { type: 'schedule:jobs'; jobs: ScheduledJob[] }
+  | { type: 'schedule:runs'; runs: ScheduledRun[] }
+  | { type: 'schedule:run:update'; run: ScheduledRun }
+  | {
+      type: 'schedule:fire';
+      jobId: string;
+      jobName: string;
+      runId: string;
+    }
+  | { type: 'schedule:run:log'; runId: string; log: string }
+  | { type: 'schedule:run:output'; runId: string; data: string }
   | { type: 'error'; message: string };

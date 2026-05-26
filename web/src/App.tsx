@@ -16,6 +16,11 @@ import { EmptyState } from './components/EmptyState';
 import { SyncToast } from './components/SyncToast';
 import { CommandPalette } from './components/CommandPalette';
 import { SourceControlPanel } from './components/SourceControl/SourceControlPanel';
+import { ScheduleEditorDialog } from './components/Schedules/ScheduleEditorDialog';
+import { RunHistoryDialog } from './components/Schedules/RunHistoryDialog';
+import { RunLogViewer } from './components/Schedules/RunLogViewer';
+import { ScheduleFireToast } from './components/Schedules/ScheduleFireToast';
+import { DeleteScheduleConfirm } from './components/Schedules/DeleteScheduleConfirm';
 import { Direction } from './lib/layout-engine';
 
 export function App() {
@@ -75,6 +80,7 @@ export function App() {
 
       <div className="relative flex-1 flex flex-col min-w-0">
         <SyncToast />
+        <ScheduleFireToast />
         <Toolbar onNewPane={handleNewPane} />
 
         <div className="flex-1 min-h-0 min-w-0">
@@ -95,6 +101,11 @@ export function App() {
       </div>
 
       <SourceControlPanel />
+
+      <ScheduleEditorDialog />
+      <RunHistoryDialog />
+      <RunLogViewer />
+      <DeleteScheduleConfirm />
     </div>
   );
 }

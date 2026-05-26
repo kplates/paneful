@@ -5,6 +5,7 @@ import { useProjectStore } from '../stores/projectStore';
 import { useLayoutStore } from '../stores/layoutStore';
 import { useUIStore } from '../stores/uiStore';
 import { useSourceControlStore, diffCacheKey } from '../stores/sourceControlStore';
+import { useScheduleStore } from '../stores/scheduleStore';
 import { getTerminalIds } from '../lib/layout-engine';
 import { cleanupTerminal, consumePendingCommand } from './useTerminal';
 
@@ -167,6 +168,41 @@ export function useWebSocket() {
             binary: msg.binary,
             truncated: msg.truncated,
           });
+          return;
+        }
+
+        // Scheduled jobs list update
+        if (msg.type === 'schedule:jobs') {
+          useScheduleStore.getState().setJobs(msg.jobs);
+          return;
+        }
+
+        // Scheduled runs list update
+        if (msg.type === 'schedule:runs') {
+          useScheduleStore.getState().setRuns(msg.runs);
+          return;
+        }
+
+        // Individual run state update
+        if (msg.type === 'schedule:run:update') {
+          useScheduleStore.getState().upsertRun(msg.run);
+          return;
+        }
+
+        // A scheduled job is firing — the PTY runs server-side. We just show a toast;
+        // user can open the viewer from history to interact with the live run.
+        if (msg.type === 'schedule:fire') {
+          useScheduleStore.getState().showFireToast(msg.jobName, '', msg.runId);
+          return;
+        }
+
+        if (msg.type === 'schedule:run:log') {
+          useScheduleStore.getState().setRunLog(msg.runId, msg.log);
+          return;
+        }
+
+        if (msg.type === 'schedule:run:output') {
+          useScheduleStore.getState().appendRunOutput(msg.runId, msg.data);
           return;
         }
 

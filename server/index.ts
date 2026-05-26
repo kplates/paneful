@@ -290,6 +290,35 @@ async function startServer(devMode: boolean, port: number): Promise<void> {
     }
   });
 
+  // macOS-only Finder folder picker via osascript. Returns the chosen POSIX path or null.
+  app.post('/api/pick-folder', async (req, res) => {
+    if (process.platform !== 'darwin') {
+      res.json({ path: null, error: 'folder picker is macOS-only' });
+      return;
+    }
+    const { default: defaultLocation } = req.body ?? {};
+    const seed = (typeof defaultLocation === 'string' && defaultLocation)
+      ? defaultLocation.replace(/^~/, os.homedir())
+      : os.homedir();
+    const { execFile } = await import('node:child_process');
+    const script = `
+      try
+        tell application "System Events"
+          activate
+          set chosen to choose folder with prompt "Select a folder" default location POSIX file "${seed.replace(/"/g, '\\"')}"
+        end tell
+        return POSIX path of chosen
+      on error number -128
+        return ""
+      end try
+    `;
+    execFile('osascript', ['-e', script], { timeout: 120_000 }, (err, stdout) => {
+      if (err) { res.json({ path: null }); return; }
+      const trimmed = stdout.trim().replace(/\/$/, '');
+      res.json({ path: trimmed || null });
+    });
+  });
+
   // Resolve a dropped file's full path via tiered search (stat → find → Spotlight)
   const resolvePathCache = new Map<string, { path: string | null; isDirectory: boolean; ts: number }>();
   const RESOLVE_CACHE_TTL = 30_000;

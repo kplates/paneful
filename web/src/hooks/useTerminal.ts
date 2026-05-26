@@ -8,6 +8,7 @@ import { sendMessage } from './useWebSocket';
 import { useSessionStore } from '../stores/sessionStore';
 import { useUIStore, getResolvedTheme } from '../stores/uiStore';
 import { XTERM_THEME_DARK, XTERM_THEME_LIGHT } from '../lib/constants';
+import { handleTerminalCoreShortcuts, attachCopyTrim } from '../lib/terminal-input';
 
 function getCurrentXtermTheme() {
   const pref = useUIStore.getState().theme;
@@ -254,44 +255,17 @@ export function useTerminal({ terminalId, projectId, cwd }: UseTerminalOptions) 
     }
 
     // Clean up copied text: trim trailing whitespace that xterm pads on each row
-    term.element?.addEventListener('copy', (e) => {
-      const sel = term.getSelection();
-      if (sel) {
-        const cleaned = sel.split('\n').map(l => l.trimEnd()).join('\n');
-        (e as ClipboardEvent).clipboardData?.setData('text/plain', cleaned);
-        e.preventDefault();
-      }
-    });
+    attachCopyTrim(term);
 
     // Register session in store
     createSession(terminalId, projectId);
     setTerminalInstance(terminalId, term);
 
-    // Shift+Enter → insert a literal newline in the shell command buffer.
-    // We send Ctrl+V (\x16 = quoted-insert) followed by newline (\n).
-    // This tells zsh/bash to insert the next char literally instead of executing.
     term.attachCustomKeyEventHandler((e) => {
-      if (e.key === 'Enter' && e.shiftKey) {
-        if (e.type === 'keydown') {
-          sendMessage({ type: 'pty:input', terminalId, data: '\x16\n' });
-        }
-        return false;
-      }
-      // Cmd+Left/Right → line start/end (Ctrl+A / Ctrl+E)
-      if (e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey && e.type === 'keydown') {
-        if (e.key === 'ArrowLeft') {
-          sendMessage({ type: 'pty:input', terminalId, data: '\x01' });
-          return false;
-        }
-        if (e.key === 'ArrowRight') {
-          sendMessage({ type: 'pty:input', terminalId, data: '\x05' });
-          return false;
-        }
-        if (e.key === 'Backspace') {
-          sendMessage({ type: 'pty:input', terminalId, data: '\x15' });
-          return false;
-        }
-      }
+      // Shared shell-input shortcuts (Shift+Enter, Cmd+Left/Right/Backspace).
+      const sendInput = (data: string) =>
+        sendMessage({ type: 'pty:input', terminalId, data });
+      if (handleTerminalCoreShortcuts(e, sendInput)) return false;
       // Cmd+F: let capture-phase handler in useKeyboardShortcuts open search UI
       if (e.metaKey && e.key === 'f' && !e.altKey && !e.ctrlKey) {
         return false;

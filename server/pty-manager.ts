@@ -19,6 +19,7 @@ export class PtyManager {
     cwd: string,
     onOutput: PtyOutputCallback,
     onExit: PtyExitCallback,
+    command?: string,
   ): void {
     const shell = process.env.SHELL || (os.platform() === 'win32' ? 'powershell.exe' : '/bin/bash');
 
@@ -31,7 +32,22 @@ export class PtyManager {
     env.LANG = 'en_US.UTF-8';
     env.LC_ALL = 'en_US.UTF-8';
 
-    const proc = pty.spawn(shell, ['--login'], {
+    // Command mode: run the command in the user's own login+interactive shell,
+    // then drop back into an interactive shell so the PTY stays alive (matches
+    // Terminal.app behavior). We use `-l -i` so both profile AND rc files
+    // (e.g. ~/.zshrc) are sourced — that's where user-installed binaries
+    // like `claude`, `nvm`-managed `node`, etc. land on PATH.
+    //
+    // Passing the command via $0 + eval keeps the user's command opaque to the
+    // wrapper script's quoting.
+    const wrapper = `eval "$0"; printf '\\r\\n\\033[90m[paneful: command finished — type exit to close this run]\\033[0m\\r\\n'; exec "$1" -i -l`;
+    const isCommandMode = !!command;
+    // bash and zsh both accept -l -i -c SCRIPT ARG ARG. Fish doesn't, so fall back to bash.
+    const wrapperShell = /\/(bash|zsh)$/.test(shell) ? shell : '/bin/bash';
+    const args = isCommandMode
+      ? ['-l', '-i', '-c', wrapper, command as string, shell]
+      : ['--login'];
+    const proc = pty.spawn(isCommandMode ? wrapperShell : shell, args, {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,
@@ -96,6 +112,26 @@ export class PtyManager {
     this.sessions.clear();
   }
 
+  /**
+   * Pauses the PTY by sending SIGSTOP to its process group. The shell and its
+   * descendants freeze in place — no CPU, no I/O — and their in-memory state
+   * is preserved until `cont()` is called.
+   */
+  pause(terminalId: string): boolean {
+    const managed = this.sessions.get(terminalId);
+    if (!managed) return false;
+    return signalPty(managed.process.pid, 'SIGSTOP');
+  }
+
+  /**
+   * Continues a paused PTY (SIGCONT). The process picks up exactly where it was.
+   */
+  cont(terminalId: string): boolean {
+    const managed = this.sessions.get(terminalId);
+    if (!managed) return false;
+    return signalPty(managed.process.pid, 'SIGCONT');
+  }
+
   terminalExists(terminalId: string): boolean {
     return this.sessions.has(terminalId);
   }
@@ -153,3 +189,19 @@ export class PtyManager {
 const RUNTIME_PROCESSES = new Set(['node', 'python', 'python3']);
 // Match agent binary names at the end of a path or as a standalone token
 const AGENT_CMD_PATTERN = /(?:^|\/)(codex|claude|aider)(?:\s|$)/;
+
+// Signal the PTY's whole process group (negative pid) so children pause/continue with it.
+// Falls back to single-process if the group signal fails (unlikely on macOS).
+function signalPty(pid: number, signal: NodeJS.Signals): boolean {
+  try {
+    process.kill(-pid, signal);
+    return true;
+  } catch {
+    try {
+      process.kill(pid, signal);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}

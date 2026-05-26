@@ -15,6 +15,7 @@ import { NewProjectDialog } from './NewProjectDialog';
 import { FavouritesList } from './FavouritesList';
 import { SaveFavouriteDialog } from './SaveFavouriteDialog';
 import { LaunchFavouriteDialog } from './LaunchFavouriteDialog';
+import { SchedulesList } from '../Schedules/SchedulesList';
 
 export function Sidebar() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -390,6 +391,8 @@ export function Sidebar() {
               onEdit={handleEditFavourite}
               onDelete={removeFavourite}
             />
+
+            <SchedulesList />
           </>
         )}
       </div>

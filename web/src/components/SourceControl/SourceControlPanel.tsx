@@ -444,7 +444,11 @@ export function SourceControlPanel() {
   const status = useSourceControlStore((s) =>
     activeProjectId ? s.statusByProject[activeProjectId] : null,
   );
-  const selectedFile = useSourceControlStore((s) => s.selectedFile);
+  const rawSelectedFile = useSourceControlStore((s) => s.selectedFile);
+  // Ignore a selection that belongs to a different project — prevents the
+  // previous project's file name + diff from lingering after switching workspaces.
+  const selectedFile =
+    rawSelectedFile && rawSelectedFile.projectId === activeProjectId ? rawSelectedFile : null;
   const selectFile = useSourceControlStore((s) => s.selectFile);
   const selectedPaths = useSourceControlStore((s) => s.selectedPaths);
   const selectionAnchor = useSourceControlStore((s) => s.selectionAnchor);
@@ -498,6 +502,7 @@ export function SourceControlPanel() {
   // Click handling: plain = select+open, Cmd = toggle, Shift = range
   const handleRowClick: FileRowProps["onClick"] = useCallback(
     (e, entry, group, index, groupEntries, diffKind) => {
+      if (!activeProjectId) return;
       const key = selectionKey(group, entry.path);
       const meta = e.metaKey || e.ctrlKey;
       const shift = e.shiftKey;
@@ -520,14 +525,19 @@ export function SourceControlPanel() {
 
       // Plain click — single select + open diff
       setMultiSelection([key], key);
-      const next: SelectedFile = { path: entry.path, kind: diffKind };
-      if (selectedFile && selectedFile.path === entry.path && selectedFile.kind === diffKind) {
+      const next: SelectedFile = { projectId: activeProjectId, path: entry.path, kind: diffKind };
+      if (
+        selectedFile &&
+        selectedFile.projectId === activeProjectId &&
+        selectedFile.path === entry.path &&
+        selectedFile.kind === diffKind
+      ) {
         selectFile(null);
       } else {
         selectFile(next);
       }
     },
-    [selectionAnchor, selectedFile, setMultiSelection, toggleSelection, selectFile],
+    [activeProjectId, selectionAnchor, selectedFile, setMultiSelection, toggleSelection, selectFile],
   );
 
   // Resolve which files an action should apply to:

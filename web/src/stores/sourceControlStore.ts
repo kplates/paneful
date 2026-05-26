@@ -3,6 +3,7 @@ import { persistSettings } from "../lib/persist";
 import type { ScStatus, ScDiffKind, ScAction } from "../lib/protocol";
 
 export interface SelectedFile {
+  projectId: string;
   path: string;
   kind: ScDiffKind;
 }
