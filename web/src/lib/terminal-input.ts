@@ -6,8 +6,10 @@ import type { Terminal } from "@xterm/xterm";
  * customKeyEventHandler so the event doesn't propagate further).
  *
  * Bindings:
- *  - Shift+Enter → \x16\n (Ctrl+V quoted-insert + newline) so the shell inserts
- *    a literal newline in the command buffer instead of submitting.
+ *  - Shift+Enter → bracketed-paste-wrapped newline so shells/TUIs insert a
+ *    literal newline instead of submitting. Doesn't use Ctrl+V (which would
+ *    collide with paste shortcuts in Claude Code and other TUIs — pasting
+ *    whatever's on the clipboard, including images).
  *  - Cmd+Left → \x01 (Ctrl+A, line start)
  *  - Cmd+Right → \x05 (Ctrl+E, line end)
  *  - Cmd+Backspace → \x15 (Ctrl+U, clear line)
@@ -17,7 +19,7 @@ export function handleTerminalCoreShortcuts(
   sendInput: (data: string) => void,
 ): boolean {
   if (e.key === "Enter" && e.shiftKey) {
-    if (e.type === "keydown") sendInput("\x16\n");
+    if (e.type === "keydown") sendInput("\x1b[200~\n\x1b[201~");
     return true;
   }
   if (e.metaKey && !e.altKey && !e.ctrlKey && !e.shiftKey && e.type === "keydown") {

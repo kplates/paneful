@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.20 — 2026-05-26
+
+- **Fixed Shift+Enter pasting clipboard contents in Claude Code and other TUIs** — the previous workaround sent `Ctrl+V` (readline quoted-insert), which collided with TUIs that use Ctrl+V as a paste shortcut and would dump whatever was on your clipboard (including images) into the prompt. Now uses bracketed-paste sequences so shells and TUIs insert a literal newline without touching the clipboard.
+
 ## 0.9.19 — 2026-05-26
 
 - New **Scheduled Jobs** (beta) — run any shell command on a recurring schedule, with each run as its own interactive terminal
