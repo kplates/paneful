@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Editor sync — Paneful Docs</title>
+    <meta
+      name="description"
+      content="Paneful auto-switches the active project when you focus a different editor window. Works with VS Code, Cursor, Zed, and Windsurf on macOS."
+    />
+    <link rel="canonical" href="https://paneful.dev/editor-sync.html" />
+    <link rel="icon" type="image/png" href="icon-512.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <nav class="topbar">
+      <div class="topbar-inner">
+        <a href="index.html" class="brand">
+          <img src="icon-512.png" alt="Paneful" />
+          Paneful
+        </a>
+        <span class="topbar-version">v0.9.19</span>
+        <div class="topbar-spacer"></div>
+        <ul class="topbar-links">
+          <li><a href="https://github.com/kplates/paneful">GitHub</a></li>
+          <li><a href="https://github.com/kplates/paneful/blob/master/CHANGELOG.md">Changelog</a></li>
+          <li><a href="https://www.npmjs.com/package/paneful">npm</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="docs-shell">
+      <aside class="docs-sidebar">
+        <nav>
+          <div>
+            <div class="docs-sidebar-group-label">Getting started</div>
+            <a href="index.html" class="docs-sidebar-link">Overview</a>
+            <a href="index.html#install" class="docs-sidebar-link">Install</a>
+            <a href="index.html#first-project" class="docs-sidebar-link">First project</a>
+            <a href="index.html#updating" class="docs-sidebar-link">Updating</a>
+          </div>
+          <div>
+            <div class="docs-sidebar-group-label">Features</div>
+            <a href="schedules.html" class="docs-sidebar-link">
+              Schedules <span class="pill">Beta</span>
+            </a>
+            <a href="source-control.html" class="docs-sidebar-link">Source control</a>
+            <a href="editor-sync.html" class="docs-sidebar-link is-active">Editor sync</a>
+          </div>
+          <div>
+            <div class="docs-sidebar-group-label">Reference</div>
+            <a href="shortcuts.html" class="docs-sidebar-link">Keyboard shortcuts</a>
+            <a href="https://github.com/kplates/paneful/blob/master/CHANGELOG.md" class="docs-sidebar-link">Changelog</a>
+          </div>
+        </nav>
+      </aside>
+
+      <div class="docs-main">
+        <article class="docs-article">
+          <h1 id="editor-sync">Editor sync</h1>
+          <p class="docs-lede">
+            When you focus a different editor window — VS Code, Cursor, Zed, or
+            Windsurf — Paneful automatically switches to that project's
+            terminals. Zero clicking, zero context-switching. macOS only.
+          </p>
+
+          <p>
+            Toggle the whole system on/off from the sidebar header (monitor
+            icon). When you switch to an editor window, Paneful matches the
+            folder name in the window title against your project list and
+            switches if it finds one. A small toast confirms the switch.
+          </p>
+
+          <h2 id="supported-editors">Supported editors</h2>
+          <p>The detection matches these window-title patterns:</p>
+          <ul>
+            <li>VS Code</li>
+            <li>Cursor</li>
+            <li>Zed</li>
+            <li>Windsurf</li>
+            <li>Any Electron-based editor with the folder name in the title</li>
+          </ul>
+
+          <h2 id="setup">Setup</h2>
+          <p>
+            Editor sync needs the macOS Accessibility permission, because reading
+            the focused window's title is a privileged operation. Without it,
+            Paneful sees that an editor is frontmost but can't tell which folder
+            you're in.
+          </p>
+
+          <h3 id="grant-permission">Grant accessibility</h3>
+          <ol>
+            <li>
+              Open <strong>System Settings</strong> → <strong>Privacy &amp;
+              Security</strong> → <strong>Accessibility</strong>.
+            </li>
+            <li>
+              Click <strong>+</strong> and add the app that <em>launched</em>
+              Paneful. If you ran <code>paneful</code> from Terminal, add
+              Terminal. From iTerm, add iTerm. From the native macOS app, add
+              <strong>Paneful</strong>.
+            </li>
+            <li>Make sure the toggle next to it is on.</li>
+          </ol>
+          <div class="callout callout--note">
+            <span class="callout-icon">ⓘ</span>
+            <div class="callout-body">
+              <strong>If it stops working after an update:</strong> macOS
+              sometimes invalidates the entry. Toggle it off and back on, or
+              remove and re-add the app. Paneful's sidebar shows a yellow dot
+              on the sync icon when the permission is missing.
+            </div>
+          </div>
+
+          <h3 id="editor-config">Editor window titles</h3>
+          <p>
+            VS Code and Cursor include the folder name in the window title by
+            default — no config needed. If you've customized
+            <code>window.title</code> in <code>settings.json</code>, make sure
+            the folder name is still present somewhere in the format.
+          </p>
+
+          <h2 id="troubleshooting">Troubleshooting</h2>
+          <p>Editor sync isn't switching projects?</p>
+          <ul>
+            <li>Click the sync icon to confirm it's enabled (accent color, not muted).</li>
+            <li>Look for a yellow dot on the icon — that means the Accessibility permission is missing.</li>
+            <li>Open a Paneful terminal and run <code>~/.paneful/paneful-editor-helper --check</code>. Output of <code>ok</code> means accessibility is granted; <code>needs-accessibility</code> means it isn't.</li>
+            <li>Confirm your editor's window title includes the folder name (look at the title bar).</li>
+            <li>
+              Confirm your Paneful project's name matches the folder. (It's the
+              folder name by default; you can rename projects in the sidebar.)
+            </li>
+          </ul>
+        </article>
+
+        <aside class="docs-toc">
+          <div class="docs-toc-label">On this page</div>
+          <ul id="toc-list"></ul>
+        </aside>
+      </div>
+    </div>
+
+    <footer>
+      <div class="footer-inner">
+        <span>Paneful · MIT licensed · Built by <a href="https://github.com/kplates">kplates</a></span>
+        <ul class="footer-links">
+          <li><a href="https://github.com/kplates/paneful">GitHub</a></li>
+          <li><a href="https://github.com/kplates/paneful/blob/master/CHANGELOG.md">Changelog</a></li>
+          <li><a href="https://www.npmjs.com/package/paneful">npm</a></li>
+        </ul>
+      </div>
+    </footer>
+
+    <script src="docs.js"></script>
+  </body>
+</html>

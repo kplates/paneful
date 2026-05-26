@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.9.19 — 2026-05-26
+
+- New **Scheduled Jobs** (beta) — run any shell command on a recurring schedule, with each run as its own interactive terminal
+  - New "Schedules" section in the sidebar (BETA), separate from projects so scheduled runs don't pollute your project layouts
+  - Schedule editor with When picker (Every N min/hour/day, Daily at HH:MM, Weekly with day toggles, or raw cron expression) — live preview of next-fire time
+  - Working directory chosen via the native Finder folder picker (`/api/pick-folder` → AppleScript `choose folder`)
+  - Server-owned PTYs: each fire spawns a fresh terminal that runs in the user's `$SHELL` with login + interactive flags so PATH/aliases load correctly (no more `claude: command not found`)
+  - Command finishes but the shell stays alive — no more "the terminal died with Exit 1" — drop into an interactive prompt to inspect, retry, or run follow-up commands
+  - Run history per schedule with full output capture to disk (`~/.paneful/runs/<runId>.log`, capped at 1MB), survives server restarts
+  - Click any past run to open an interactive viewer with the captured log + live streaming for active runs; full keystroke forwarding so you can answer prompts (e.g. Claude's "trust this folder?")
+  - **Pause** (SIGSTOP) freezes the process exactly where it is; **Resume** (SIGCONT) continues from that exact state — useful for stepping away mid-task
+  - **Terminate** kills the run; **Delete schedule** stops all running PTYs and cleans up
+  - Toast notification when a schedule fires; click it to jump straight into the run viewer
+  - Server stays alive while any enabled schedule exists (overrides the idle shutdown)
+- **Source control** — fixed cross-project artifact where the previously-selected file's name/diff would linger after switching projects (selection is now tagged with its project and ignored when the active project doesn't match)
+- **Internal** — extracted shared `terminal-input.ts` so scheduled-run viewers get the same Shift+Enter / Cmd-arrow / copy-trim workarounds as the main project terminals
+
 ## 0.9.18 — 2026-05-21
 
 - New **Source Control** panel (toggle with `Cmd+Shift+G` or the branch icon in the toolbar)

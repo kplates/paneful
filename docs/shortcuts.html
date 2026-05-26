@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Keyboard shortcuts — Paneful Docs</title>
+    <meta
+      name="description"
+      content="Every keyboard shortcut in Paneful — panes, layouts, source control, terminal navigation."
+    />
+    <link rel="canonical" href="https://paneful.dev/shortcuts.html" />
+    <link rel="icon" type="image/png" href="icon-512.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <nav class="topbar">
+      <div class="topbar-inner">
+        <a href="index.html" class="brand">
+          <img src="icon-512.png" alt="Paneful" />
+          Paneful
+        </a>
+        <span class="topbar-version">v0.9.19</span>
+        <div class="topbar-spacer"></div>
+        <ul class="topbar-links">
+          <li><a href="https://github.com/kplates/paneful">GitHub</a></li>
+          <li><a href="https://github.com/kplates/paneful/blob/master/CHANGELOG.md">Changelog</a></li>
+          <li><a href="https://www.npmjs.com/package/paneful">npm</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="docs-shell">
+      <aside class="docs-sidebar">
+        <nav>
+          <div>
+            <div class="docs-sidebar-group-label">Getting started</div>
+            <a href="index.html" class="docs-sidebar-link">Overview</a>
+            <a href="index.html#install" class="docs-sidebar-link">Install</a>
+            <a href="index.html#first-project" class="docs-sidebar-link">First project</a>
+            <a href="index.html#updating" class="docs-sidebar-link">Updating</a>
+          </div>
+          <div>
+            <div class="docs-sidebar-group-label">Features</div>
+            <a href="schedules.html" class="docs-sidebar-link">
+              Schedules <span class="pill">Beta</span>
+            </a>
+            <a href="source-control.html" class="docs-sidebar-link">Source control</a>
+            <a href="editor-sync.html" class="docs-sidebar-link">Editor sync</a>
+          </div>
+          <div>
+            <div class="docs-sidebar-group-label">Reference</div>
+            <a href="shortcuts.html" class="docs-sidebar-link is-active">Keyboard shortcuts</a>
+            <a href="https://github.com/kplates/paneful/blob/master/CHANGELOG.md" class="docs-sidebar-link">Changelog</a>
+          </div>
+        </nav>
+      </aside>
+
+      <div class="docs-main">
+        <article class="docs-article">
+          <h1 id="shortcuts">Keyboard shortcuts</h1>
+          <p class="docs-lede">
+            Every binding in Paneful, grouped by what they do. Shortcuts use
+            <kbd>⌘</kbd> on macOS / <kbd>Ctrl</kbd> on Linux unless noted.
+          </p>
+
+          <h2 id="general">General</h2>
+          <table>
+            <thead>
+              <tr><th>Shortcut</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><kbd>⌘</kbd> + <kbd>P</kbd></td><td>Open command palette</td></tr>
+              <tr><td><kbd>⌘</kbd> + <kbd>D</kbd></td><td>Toggle sidebar</td></tr>
+              <tr><td><kbd>⌘</kbd> + <kbd>Shift</kbd> + <kbd>G</kbd></td><td>Toggle source control panel</td></tr>
+              <tr><td><kbd>⌘</kbd> + <kbd>F</kbd></td><td>Search the focused terminal's scrollback</td></tr>
+            </tbody>
+          </table>
+
+          <h2 id="panes">Panes</h2>
+          <table>
+            <thead>
+              <tr><th>Shortcut</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><kbd>⌘</kbd> + <kbd>N</kbd></td><td>New pane (vertical split)</td></tr>
+              <tr><td><kbd>⌘</kbd> + <kbd>Shift</kbd> + <kbd>N</kbd></td><td>New pane (horizontal split)</td></tr>
+              <tr><td><kbd>⌘</kbd> + <kbd>W</kbd></td><td>Close the focused pane</td></tr>
+              <tr><td><kbd>⌘</kbd> + <kbd>1</kbd> – <kbd>9</kbd></td><td>Focus pane by index</td></tr>
+              <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>←/→/↑/↓</kbd></td><td>Move focus to the adjacent pane</td></tr>
+              <tr><td><kbd>Shift</kbd> + <kbd>←/→/↑/↓</kbd></td><td>Swap the focused pane with the adjacent one</td></tr>
+            </tbody>
+          </table>
+
+          <h2 id="layout">Layout</h2>
+          <table>
+            <thead>
+              <tr><th>Shortcut</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><kbd>⌘</kbd> + <kbd>T</kbd></td><td>Cycle through layout presets</td></tr>
+              <tr><td><kbd>⌘</kbd> + <kbd>R</kbd></td><td>Auto-pick the best layout for the current pane count</td></tr>
+            </tbody>
+          </table>
+
+          <h2 id="terminal">Terminal text</h2>
+          <p>
+            These work inside any terminal pane, including scheduled-run viewers.
+            They paper over things the browser would otherwise eat, mapping them
+            to what your shell expects.
+          </p>
+          <table>
+            <thead>
+              <tr><th>Shortcut</th><th>Sends</th><th>Result</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><kbd>Shift</kbd> + <kbd>Enter</kbd></td><td><code>Ctrl+V</code> + LF</td><td>Inserts a literal newline in the command buffer (no submit)</td></tr>
+              <tr><td><kbd>⌘</kbd> + <kbd>←</kbd></td><td><code>Ctrl+A</code></td><td>Cursor to line start</td></tr>
+              <tr><td><kbd>⌘</kbd> + <kbd>→</kbd></td><td><code>Ctrl+E</code></td><td>Cursor to line end</td></tr>
+              <tr><td><kbd>⌘</kbd> + <kbd>Backspace</kbd></td><td><code>Ctrl+U</code></td><td>Clear line</td></tr>
+            </tbody>
+          </table>
+
+          <h2 id="other-conveniences">Other</h2>
+          <table>
+            <thead>
+              <tr><th>Action</th><th>How</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Open URL in system browser</td><td><kbd>⌘</kbd> + click any URL in a terminal</td></tr>
+              <tr><td>Copy with trailing whitespace stripped</td><td>Select text, then <kbd>⌘</kbd> + <kbd>C</kbd></td></tr>
+              <tr><td>Drag a folder from Finder</td><td>Drop on the sidebar to create a project; drop on a pane to paste the path</td></tr>
+              <tr><td>Toggle GPU rendering</td><td>Lightning bolt icon in the sidebar header, or via command palette</td></tr>
+              <tr><td>Toggle theme</td><td>Sun/moon/monitor icon in the sidebar header</td></tr>
+            </tbody>
+          </table>
+        </article>
+
+        <aside class="docs-toc">
+          <div class="docs-toc-label">On this page</div>
+          <ul id="toc-list"></ul>
+        </aside>
+      </div>
+    </div>
+
+    <footer>
+      <div class="footer-inner">
+        <span>Paneful · MIT licensed · Built by <a href="https://github.com/kplates">kplates</a></span>
+        <ul class="footer-links">
+          <li><a href="https://github.com/kplates/paneful">GitHub</a></li>
+          <li><a href="https://github.com/kplates/paneful/blob/master/CHANGELOG.md">Changelog</a></li>
+          <li><a href="https://www.npmjs.com/package/paneful">npm</a></li>
+        </ul>
+      </div>
+    </footer>
+
+    <script src="docs.js"></script>
+  </body>
+</html>

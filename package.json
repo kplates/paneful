@@ -1,6 +1,6 @@
 {
   "name": "paneful",
-  "version": "0.9.18",
+  "version": "0.9.19",
   "description": "A fast, GPU-accelerated terminal manager with split panes, project organization, editor sync, and AI agent detection. Native macOS app or browser.",
   "type": "module",
   "bin": {

@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Schedules — Paneful Docs</title>
+    <meta
+      name="description"
+      content="Run shell commands on a recurring schedule in Paneful. Each fire becomes its own interactive terminal you can attach to, pause, resume, and replay."
+    />
+    <link rel="canonical" href="https://paneful.dev/schedules.html" />
+    <link rel="icon" type="image/png" href="icon-512.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <nav class="topbar">
+      <div class="topbar-inner">
+        <a href="index.html" class="brand">
+          <img src="icon-512.png" alt="Paneful" />
+          Paneful
+        </a>
+        <span class="topbar-version">v0.9.19</span>
+        <div class="topbar-spacer"></div>
+        <ul class="topbar-links">
+          <li><a href="https://github.com/kplates/paneful">GitHub</a></li>
+          <li><a href="https://github.com/kplates/paneful/blob/master/CHANGELOG.md">Changelog</a></li>
+          <li><a href="https://www.npmjs.com/package/paneful">npm</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="docs-shell">
+      <aside class="docs-sidebar">
+        <nav>
+          <div>
+            <div class="docs-sidebar-group-label">Getting started</div>
+            <a href="index.html" class="docs-sidebar-link">Overview</a>
+            <a href="index.html#install" class="docs-sidebar-link">Install</a>
+            <a href="index.html#first-project" class="docs-sidebar-link">First project</a>
+            <a href="index.html#updating" class="docs-sidebar-link">Updating</a>
+          </div>
+          <div>
+            <div class="docs-sidebar-group-label">Features</div>
+            <a href="schedules.html" class="docs-sidebar-link is-active">
+              Schedules <span class="pill">Beta</span>
+            </a>
+            <a href="source-control.html" class="docs-sidebar-link">Source control</a>
+            <a href="editor-sync.html" class="docs-sidebar-link">Editor sync</a>
+          </div>
+          <div>
+            <div class="docs-sidebar-group-label">Reference</div>
+            <a href="shortcuts.html" class="docs-sidebar-link">Keyboard shortcuts</a>
+            <a href="https://github.com/kplates/paneful/blob/master/CHANGELOG.md" class="docs-sidebar-link">Changelog</a>
+          </div>
+        </nav>
+      </aside>
+
+      <div class="docs-main">
+        <article class="docs-article">
+          <h1 id="schedules">Schedules <span class="beta-pill">Beta</span></h1>
+          <p class="docs-lede">
+            Schedules let you run a shell command on a recurring cron. Each fire
+            becomes its own interactive terminal — you can attach to it while it's
+            running, pause and resume the process in-place, terminate it, and
+            replay the captured output later. Designed for long-running automated
+            sessions (e.g. <code>claude --dangerously-skip-permissions "review my open PRs"</code>
+            on weekday mornings).
+          </p>
+
+          <div class="callout callout--note">
+            <span class="callout-icon">ⓘ</span>
+            <div class="callout-body">
+              <strong>Independent from projects.</strong> Scheduled runs don't appear in any
+              project's pane layout. Your real project terminals are never disturbed.
+            </div>
+          </div>
+
+          <h2 id="creating-a-schedule">Creating a schedule</h2>
+          <p>
+            Open the <strong>Schedules</strong> section in the sidebar (below
+            Favourites) and click <strong>+</strong>. A dialog opens with five fields:
+          </p>
+          <ul>
+            <li><strong>Name</strong> — how it shows up in the sidebar and history.</li>
+            <li>
+              <strong>Working directory</strong> — click <strong>Browse</strong> for
+              a native Finder folder picker, or paste a path. The command runs from
+              here.
+            </li>
+            <li>
+              <strong>Command</strong> — anything you'd run in a terminal. Multi-line
+              ok. A trailing newline is added automatically.
+            </li>
+            <li><strong>When</strong> — see <a href="#schedule-modes">Schedule modes</a> below.</li>
+            <li><strong>Enabled</strong> — uncheck to keep the schedule but pause firing.</li>
+          </ul>
+          <p>
+            The dialog shows the resolved cron expression and the next-fire time
+            live as you edit. Hit <strong>Create</strong> and the schedule starts
+            running on its cadence.
+          </p>
+
+          <h2 id="schedule-modes">Schedule modes</h2>
+          <p>The "When" picker offers four modes:</p>
+          <ul>
+            <li><strong>Every</strong> — every N minutes, hours, or days (with a time-of-day for the day variant).</li>
+            <li><strong>Daily</strong> — once a day at a specific time.</li>
+            <li><strong>Weekly</strong> — toggle the days of the week + time.</li>
+            <li><strong>Cron</strong> — standard 5-field cron expression, or aliases like <code>@hourly</code> / <code>@daily</code> / <code>@weekly</code>.</li>
+          </ul>
+
+          <h2 id="how-it-runs">How it runs</h2>
+          <p>
+            Schedules run in your default shell, with the same setup you'd get
+            opening Terminal.app — your PATH, aliases, and everything from
+            <code>nvm</code> / <code>asdf</code> / <code>oh-my-zsh</code> all work.
+          </p>
+          <p>
+            When the command finishes, the terminal stays open at a prompt.
+            You can read the output, retry, or run follow-up commands. It only
+            ends when you type <code>exit</code> or terminate from the UI.
+          </p>
+
+          <h2 id="viewing-runs">Viewing runs</h2>
+          <p>
+            Each schedule has a history of runs. Click the clock icon on a
+            schedule row in the sidebar to open the history dialog, then click any
+            row to open its viewer.
+          </p>
+
+          <h3 id="active-runs">Active runs</h3>
+          <p>
+            When you open an active run, the viewer attaches to the live
+            session. Output up to that point fills the terminal, and any new
+            output streams in. You can type into it like a normal terminal:
+          </p>
+          <ul>
+            <li>Answer prompts (e.g. Claude's "Is this a project you trust? <kbd>1</kbd>").</li>
+            <li>Use <kbd>Shift</kbd> + <kbd>Enter</kbd> to insert a literal newline.</li>
+            <li>Use <kbd>⌘</kbd> + <kbd>←</kbd> / <kbd>→</kbd> for line start / line end,
+              <kbd>⌘</kbd> + <kbd>Backspace</kbd> to clear the line.</li>
+            <li>Cmd-click URLs to open them in your system browser.</li>
+            <li>Copy with trailing whitespace stripped.</li>
+          </ul>
+          <p>
+            Closing the viewer (<kbd>X</kbd>) just detaches — the run keeps
+            going in the background. Reopen any time to pick up where it was.
+          </p>
+
+          <h3 id="pause-resume">Pause and resume</h3>
+          <p>
+            <strong>Pause</strong> freezes the process exactly where it is —
+            mid-thought, mid-loop, anywhere. The badge turns yellow.
+            <strong>Resume</strong> picks back up from that exact point. Same
+            process, same state. Not a restart.
+          </p>
+
+          <h3 id="terminating">Terminating</h3>
+          <p>
+            <strong>Terminate</strong> kills the run and marks it as
+            <strong>Terminated</strong> in history. Use this when you're done
+            and don't intend to come back. Deleting the schedule entirely also
+            terminates any of its active runs.
+          </p>
+
+          <h3 id="closed-runs">Closed runs</h3>
+          <p>
+            Once a run has ended, the viewer becomes a read-only replay of the
+            captured output. Colors and formatting (Claude's UI, ANSI escape
+            sequences) are preserved.
+          </p>
+
+          <div class="callout callout--warn">
+            <span class="callout-icon">!</span>
+            <div class="callout-body">
+              <strong>Schedules only fire while Paneful is running.</strong> If
+              you quit Paneful, schedules pause until you re-open it.
+            </div>
+          </div>
+
+          <h2 id="example">A concrete example</h2>
+          <p>Schedule a Claude review session for weekday mornings:</p>
+          <ul>
+            <li><strong>Name</strong>: Morning PR review</li>
+            <li><strong>Working directory</strong>: <code>~/code/myapp</code></li>
+            <li><strong>Command</strong>:</li>
+          </ul>
+          <pre><code>claude --dangerously-skip-permissions "Check open PRs on github.com/me/myapp. \
+For each: read description, diff, comments. List anything unresolved, and for \
+clear fixes, apply and push a commit on the PR's branch. Use gh CLI."</code></pre>
+          <ul>
+            <li><strong>When</strong>: Weekly → Mon Tue Wed Thu Fri at 08:00.</li>
+          </ul>
+          <p>
+            At 8am on weekdays you'll get a toast: "Schedule running — Morning PR
+            review". Click it to drop into the live terminal, answer any prompts,
+            and let Claude work. Come back at lunch and read the output.
+          </p>
+        </article>
+
+        <aside class="docs-toc">
+          <div class="docs-toc-label">On this page</div>
+          <ul id="toc-list"></ul>
+        </aside>
+      </div>
+    </div>
+
+    <footer>
+      <div class="footer-inner">
+        <span>Paneful · MIT licensed · Built by <a href="https://github.com/kplates">kplates</a></span>
+        <ul class="footer-links">
+          <li><a href="https://github.com/kplates/paneful">GitHub</a></li>
+          <li><a href="https://github.com/kplates/paneful/blob/master/CHANGELOG.md">Changelog</a></li>
+          <li><a href="https://www.npmjs.com/package/paneful">npm</a></li>
+        </ul>
+      </div>
+    </footer>
+
+    <script src="docs.js"></script>
+  </body>
+</html>

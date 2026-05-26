@@ -2,7 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://paneful.dev/</loc>
-    <lastmod>2026-03-21</lastmod>
+    <lastmod>2026-05-26</lastmod>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://paneful.dev/schedules.html</loc>
+    <lastmod>2026-05-26</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://paneful.dev/source-control.html</loc>
+    <lastmod>2026-05-26</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://paneful.dev/editor-sync.html</loc>
+    <lastmod>2026-05-26</lastmod>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://paneful.dev/shortcuts.html</loc>
+    <lastmod>2026-05-26</lastmod>
+    <priority>0.6</priority>
   </url>
 </urlset>

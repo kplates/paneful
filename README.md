@@ -67,6 +67,21 @@ Press `Cmd+P` to open the command palette. Quickly switch projects, launch favou
 
 The sidebar shows the current Git branch next to each project's working directory as a small pill badge. Updates automatically every 10 seconds. Non-git directories show no badge.
 
+### Scheduled Jobs (beta)
+
+Run any shell command on a recurring schedule. Open the **Schedules** section in the sidebar (below Favourites) and click **+** to create one. Pick a name, a working directory via the Finder picker, the command to run, and a schedule — every N minutes/hours/days, daily at HH:MM, weekly on chosen days, or a raw cron expression. The next-fire time is shown live as you build the schedule.
+
+Each fire spawns a fresh server-side terminal in your `$SHELL` (login + interactive, so your full PATH is loaded) and runs the command — schedules are completely separate from projects so they don't pollute your layouts. The command runs, then drops into an interactive shell, so the terminal **never dies on its own** — you decide when to close it.
+
+Every run is captured to disk so the history is inspectable later. Click any past run from the schedule's history dialog to open an interactive viewer:
+
+- **Active runs** — live streaming output, full keystroke forwarding (answer Claude prompts, type follow-up commands, etc.).
+- **Closed runs** — read-only replay of the captured log via xterm so colors and formatting are preserved.
+- **Pause / Resume** — SIGSTOP / SIGCONT the running process. The shell freezes exactly where it was and continues from that exact state when you come back.
+- **Terminate** — kills the run when you're done with it.
+
+A common pattern: schedule a Claude CLI command (`claude --dangerously-skip-permissions "..."`) to run at 8am on weekdays. When it fires you get a toast; click it to drop into the live terminal, answer any prompts, and let it work.
+
 ### Source Control
 
 Press `Cmd+Shift+G` (or click the branch icon in the toolbar) to open the source control panel — a resizable right-side panel that shows the active project's working changes. Powered by `git status` + `fs.watch`, so updates are instant. Includes:
